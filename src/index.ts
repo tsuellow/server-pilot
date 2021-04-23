@@ -1,5 +1,5 @@
 import WebSocket = require('ws');
-import {ConnectionObject} from "./src/models/ConnectionObject";
+import {ConnectionObject} from "./models/ConnectionObject";
 console.log("test");
 
 const port: number = 3005;

@@ -1,7 +1,8 @@
+import WebSocket from 'ws';
 export class ConnectionObject {
     taxiId:number;
     city:string;
-    ws:any;
+    ws:WebSocket;
     dgramChannel:string='0.0.0.0:0';
     receptionChannels:number[]= [];
     timestamp:number=0;

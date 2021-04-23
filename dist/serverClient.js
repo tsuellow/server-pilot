@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var WebSocket = require("ws");
-var wsServer = new WebSocket.Server({ port: 3005 });
+var ws_1 = __importDefault(require("ws"));
+//theo
+var wsServer = new ws_1.default.Server({ port: 3005 });
 wsServer.on("listening", function (server) {
     console.log('serverClient is listening');
 });
