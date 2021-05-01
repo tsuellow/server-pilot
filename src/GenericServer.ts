@@ -27,7 +27,7 @@ export class GenericServer {
     const targetType: string = this.targetType;
 
     //redis client to get datagram recipients ...we will need to pass the redis url later on
-    const redisClient: redis.RedisClient = redis.createClient();
+    const redisClient: redis.RedisClient = redis.createClient("redis-conn-store-001.3uqrcc.0001.use1.cache.amazonaws.com");
 
     //list of all connected users
     const connectionList: Map<number, ConnectionObject> = new Map();
