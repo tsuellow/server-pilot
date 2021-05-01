@@ -48,7 +48,7 @@ var GenericServer = /** @class */ (function () {
         var ownType = this.ownType;
         var targetType = this.targetType;
         //redis client to get datagram recipients ...we will need to pass the redis url later on
-        var redisClient = redis_1.default.createClient();
+        var redisClient = redis_1.default.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
         //list of all connected users
         var connectionList = new Map();
         var wsServer = new ws_1.default.Server({
