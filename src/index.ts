@@ -6,8 +6,8 @@ import { GenericServer } from "./GenericServer";
 const driverServer: GenericServer = new GenericServer(
   "driver",
   "client",
-  4001,
-  44440,
+  3002,
+  33334,
   "172.31.44.252"
 );
 
@@ -17,7 +17,7 @@ const clientServer: GenericServer = new GenericServer(
   "client",
   "driver",
   3001,
-  33330,
+  33333,
   "172.31.44.252"
 );
 
