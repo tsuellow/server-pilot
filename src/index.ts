@@ -6,7 +6,7 @@ import { GenericServer } from "./GenericServer";
 const driverServer: GenericServer = new GenericServer(
   "driver",
   "client",
-  4000,
+  4001,
   44444,
   "172.31.44.252"
 );
@@ -16,7 +16,7 @@ driverServer.startServer();
 const clientServer: GenericServer = new GenericServer(
   "client",
   "driver",
-  3000,
+  3001,
   33333,
   "172.31.44.252"
 );
