@@ -40,10 +40,11 @@ export class GenericServer {
     udpSocket.bind(this.udpPort, this.ownIp);
 
     wsServer.on("listening", (server: WebSocket.Server) => {
-      console.log(ownType+" server is listening");
+      console.log(ownType+" server is listening on port "+this.wsPort);
     });
 
     wsServer.on("connection", (ws: WebSocket) => {
+      console.log("new connection registered")
       ws.on("message", (message: string) => {
         //type:0 message is in order to perform initial connect process
         //type:1 message is in order to modify reception channels as well as transmitting own location

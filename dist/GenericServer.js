@@ -45,6 +45,7 @@ var GenericServer = /** @class */ (function () {
         this.ownIp = ownIp;
     }
     GenericServer.prototype.startServer = function () {
+        var _this = this;
         var ownType = this.ownType;
         var targetType = this.targetType;
         //redis client to get datagram recipients ...we will need to pass the redis url later on
@@ -57,9 +58,10 @@ var GenericServer = /** @class */ (function () {
         var udpSocket = dgram_1.default.createSocket("udp4");
         udpSocket.bind(this.udpPort, this.ownIp);
         wsServer.on("listening", function (server) {
-            console.log(ownType + " server is listening");
+            console.log(ownType + " server is listening on port " + _this.wsPort);
         });
         wsServer.on("connection", function (ws) {
+            console.log("new connection registered");
             ws.on("message", function (message) {
                 var e_1, _a, e_2, _b;
                 //type:0 message is in order to perform initial connect process
