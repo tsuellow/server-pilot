@@ -40,7 +40,7 @@ export class GenericServer {
     udpSocket.bind(this.udpPort, this.ownIp);
 
     wsServer.on("listening", (server: WebSocket.Server) => {
-      console.log("serverClient is listening");
+      console.log(ownType+" server is listening");
     });
 
     wsServer.on("connection", (ws: WebSocket) => {

@@ -57,7 +57,7 @@ var GenericServer = /** @class */ (function () {
         var udpSocket = dgram_1.default.createSocket("udp4");
         udpSocket.bind(this.udpPort, this.ownIp);
         wsServer.on("listening", function (server) {
-            console.log("serverClient is listening");
+            console.log(ownType + " server is listening");
         });
         wsServer.on("connection", function (ws) {
             ws.on("message", function (message) {
