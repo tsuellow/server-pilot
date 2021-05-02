@@ -81,7 +81,7 @@ var GenericServer = /** @class */ (function () {
                             ws.send(JSON.stringify(response));
                             console.log(response);
                             break;
-                        case 1:
+                        case 2:
                             try {
                                 // 2 processes:
                                 //1. publish location payload on redis for counterpart(drivers) to diseminate
@@ -169,10 +169,12 @@ var GenericServer = /** @class */ (function () {
         });
         //this function sends my location to all parties in the channel delivery group
         function sendOwnLocationOut(channel, payload) {
+            console.log("getting channel: " + channel);
             redisClient.hvals(channel, function (error, addresses) {
                 var size = addresses.length;
                 var payloadBuffer = Buffer.from(payload);
                 for (var i = 0; i < size; i++) {
+                    console.log(addresses[i]);
                     var port = +addresses[i].split(":")[1];
                     var ip = addresses[i].split(":")[0];
                     udpSocket.send(payloadBuffer, 0, payloadBuffer.length, port, ip);
@@ -222,6 +224,7 @@ var GenericServer = /** @class */ (function () {
                 try {
                     for (var toAdd_1 = __values(toAdd), toAdd_1_1 = toAdd_1.next(); !toAdd_1_1.done; toAdd_1_1 = toAdd_1.next()) {
                         var iterator = toAdd_1_1.value;
+                        console.log(iterator);
                         redisClient.hset(iterator, connObj.taxiId.toString(), connObj.dgramChannel);
                     }
                 }

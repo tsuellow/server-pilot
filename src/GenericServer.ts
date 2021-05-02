@@ -68,7 +68,7 @@ export class GenericServer {
               ws.send(JSON.stringify(response));
               console.log(response);
               break;
-            case 1:
+            case 2:
               // 2 processes:
               //1. publish location payload on redis for counterpart(drivers) to diseminate
               //2. find channel delta and tell redis add and remove connection from corresponding channels
@@ -142,10 +142,12 @@ export class GenericServer {
 
     //this function sends my location to all parties in the channel delivery group
     function sendOwnLocationOut(channel: string, payload: string): void {
+      console.log("getting channel: "+channel);
       redisClient.hvals(channel, function (error, addresses) {
         let size = addresses.length;
         var payloadBuffer: Buffer = Buffer.from(payload);
         for (var i = 0; i < size; i++) {
+          console.log(addresses[i]);
           var port: number = +addresses[i].split(":")[1];
           var ip: string = addresses[i].split(":")[0];
           udpSocket.send(payloadBuffer, 0, payloadBuffer.length, port, ip);
@@ -193,6 +195,7 @@ export class GenericServer {
         }
 
         for (const iterator of toAdd) {
+          console.log(iterator);
           redisClient.hset(
             iterator,
             connObj.taxiId.toString(),
