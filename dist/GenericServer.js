@@ -63,7 +63,6 @@ var GenericServer = /** @class */ (function () {
         wsServer.on("connection", function (ws) {
             console.log("new connection registered");
             ws.on("message", function (message) {
-                var e_1, _a, e_2, _b;
                 //type:0 message is in order to perform initial connect process
                 //type:1 message is in order to modify reception channels as well as transmitting own location
                 //type:2 message is in order to exclusively send own location
@@ -82,50 +81,31 @@ var GenericServer = /** @class */ (function () {
                             console.log(response);
                             break;
                         case 2:
-                            try {
-                                // 2 processes:
-                                //1. publish location payload on redis for counterpart(drivers) to diseminate
-                                //2. find channel delta and tell redis add and remove connection from corresponding channels
-                                for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
-                                    var channel = _d.value;
-                                    sendOwnLocationOut(utils_1.getSingleChannelName(channel, jsonMsg.city, targetType), jsonMsg.payloadCSV);
-                                }
-                            }
-                            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-                            finally {
-                                try {
-                                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-                                }
-                                finally { if (e_1) throw e_1.error; }
+                            // 2 processes:
+                            //1. publish location payload on redis for counterpart(drivers) to diseminate
+                            //2. find channel delta and tell redis add and remove connection from corresponding channels
+                            for (var i = 0; i < jsonMsg.receptionChannels.length; i++) {
+                                sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), jsonMsg.payloadCSV);
                             }
                             var existingConn = connectionList.get(jsonMsg.taxiId);
                             if (existingConn) {
                                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
                             }
                             break;
-                        default: try {
+                        default:
                             // publish location payload on redis for counterpart(drivers) to diseminate
-                            for (var _e = __values(jsonMsg.targetChannels), _f = _e.next(); !_f.done; _f = _e.next()) {
-                                var channel = _f.value;
-                                sendOwnLocationOut(utils_1.getSingleChannelName(channel, jsonMsg.city, targetType), jsonMsg.payloadCSV);
+                            for (var i = 0; i < jsonMsg.receptionChannels.length; i++) {
+                                sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), jsonMsg.payloadCSV);
                             }
-                        }
-                        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                        finally {
-                            try {
-                                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
-                            }
-                            finally { if (e_2) throw e_2.error; }
-                        }
                     }
                 }
-                catch (_g) {
+                catch (_a) {
                     ws.send("illegal msg");
                 }
             });
             //when connection is ended the client is first removed from the delivery group
             ws.on("close", function (code, reason) {
-                var e_3, _a;
+                var e_1, _a;
                 try {
                     for (var connectionList_1 = __values(connectionList), connectionList_1_1 = connectionList_1.next(); !connectionList_1_1.done; connectionList_1_1 = connectionList_1.next()) {
                         var _b = __read(connectionList_1_1.value, 2), key = _b[0], value = _b[1];
@@ -138,12 +118,12 @@ var GenericServer = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                catch (e_1_1) { e_1 = { error: e_1_1 }; }
                 finally {
                     try {
                         if (connectionList_1_1 && !connectionList_1_1.done && (_a = connectionList_1.return)) _a.call(connectionList_1);
                     }
-                    finally { if (e_3) throw e_3.error; }
+                    finally { if (e_1) throw e_1.error; }
                 }
             });
         });
@@ -183,7 +163,7 @@ var GenericServer = /** @class */ (function () {
         }
         //this function updates the channels tuned into
         function updateOwnChannels(connObj, newChannels, resetAll) {
-            var e_4, _a, e_5, _b, e_6, _c;
+            var e_2, _a, e_3, _b, e_4, _c;
             if (resetAll === void 0) { resetAll = false; }
             if (resetAll) {
                 //this is when the UDP IP or port changes while the ws connection persists
@@ -195,12 +175,12 @@ var GenericServer = /** @class */ (function () {
                         redisClient.hset(iterator, connObj.taxiId.toString(), connObj.dgramChannel);
                     }
                 }
-                catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
                 finally {
                     try {
                         if (toModify_1_1 && !toModify_1_1.done && (_a = toModify_1.return)) _a.call(toModify_1);
                     }
-                    finally { if (e_4) throw e_4.error; }
+                    finally { if (e_2) throw e_2.error; }
                 }
             }
             else {
@@ -214,12 +194,12 @@ var GenericServer = /** @class */ (function () {
                         redisClient.hdel(iterator, connObj.taxiId.toString());
                     }
                 }
-                catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                catch (e_3_1) { e_3 = { error: e_3_1 }; }
                 finally {
                     try {
                         if (toRemove_1_1 && !toRemove_1_1.done && (_b = toRemove_1.return)) _b.call(toRemove_1);
                     }
-                    finally { if (e_5) throw e_5.error; }
+                    finally { if (e_3) throw e_3.error; }
                 }
                 try {
                     for (var toAdd_1 = __values(toAdd), toAdd_1_1 = toAdd_1.next(); !toAdd_1_1.done; toAdd_1_1 = toAdd_1.next()) {
@@ -228,12 +208,12 @@ var GenericServer = /** @class */ (function () {
                         redisClient.hset(iterator, connObj.taxiId.toString(), connObj.dgramChannel);
                     }
                 }
-                catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                catch (e_4_1) { e_4 = { error: e_4_1 }; }
                 finally {
                     try {
                         if (toAdd_1_1 && !toAdd_1_1.done && (_c = toAdd_1.return)) _c.call(toAdd_1);
                     }
-                    finally { if (e_6) throw e_6.error; }
+                    finally { if (e_4) throw e_4.error; }
                 }
             }
         }
