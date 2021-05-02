@@ -8,7 +8,7 @@ interface JsonMsg {
   type: number;
   taxiId: number;
   city: string;
-  targeChannel: number;
+  targetChannels: number[];
   receptionChannels: number[];
   payloadCSV: string;
 }
@@ -65,19 +65,23 @@ export class GenericServer {
               connectionList.set(jsonMsg.taxiId, conn);
               var response = { type: 0, action: "SEND UDP" };
               ws.send(JSON.stringify(response));
+              console.log(response);
               break;
             case 1:
               // 2 processes:
               //1. publish location payload on redis for counterpart(drivers) to diseminate
               //2. find channel delta and tell redis add and remove connection from corresponding channels
-              sendOwnLocationOut(
-                getSingleChannelName(
-                  jsonMsg.targeChannel,
-                  jsonMsg.city!,
-                  targetType
-                ),
-                jsonMsg.payloadCSV
-              );
+              for (const channel of jsonMsg.targetChannels) {
+                sendOwnLocationOut(
+                  getSingleChannelName(
+                    channel,
+                    jsonMsg.city!,
+                    targetType
+                  ),
+                  jsonMsg.payloadCSV
+                );
+              }
+              
               let existingConn = connectionList.get(jsonMsg.taxiId);
               if (existingConn) {
                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
@@ -85,14 +89,16 @@ export class GenericServer {
               break;
             default:
               // publish location payload on redis for counterpart(drivers) to diseminate
-              sendOwnLocationOut(
-                getSingleChannelName(
-                  jsonMsg.targeChannel,
-                  jsonMsg.city,
-                  targetType
-                ),
-                jsonMsg.payloadCSV
-              );
+              for (const channel of jsonMsg.targetChannels) {
+                sendOwnLocationOut(
+                  getSingleChannelName(
+                    channel,
+                    jsonMsg.city!,
+                    targetType
+                  ),
+                  jsonMsg.payloadCSV
+                );
+              }
           }
         } catch {
           ws.send("illegal msg");
@@ -125,6 +131,7 @@ export class GenericServer {
           //@ts-ignore
           updateOwnChannels(connObj, [], true); //change all ip:port data to the newly arrived ip:port
           const response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
+          console.log(response);
           connObj?.ws.send(JSON.stringify(response));
         } catch {
           console.warn("failed to process incomming UDP datagram");
