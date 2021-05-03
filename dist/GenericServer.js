@@ -141,6 +141,7 @@ var GenericServer = /** @class */ (function () {
                     var response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
                     console.log(response);
                     connObj === null || connObj === void 0 ? void 0 : connObj.ws.send(JSON.stringify(response));
+                    udpSocket.send("testMsj", remote.port, remote.address);
                 }
                 catch (_a) {
                     console.warn("failed to process incomming UDP datagram");
@@ -154,9 +155,10 @@ var GenericServer = /** @class */ (function () {
                 var size = addresses.length;
                 var payloadBuffer = Buffer.from(payload);
                 for (var i = 0; i < size; i++) {
-                    console.log(addresses[i]);
                     var port = +addresses[i].split(":")[1];
                     var ip = addresses[i].split(":")[0];
+                    console.log(port);
+                    console.log(ip);
                     udpSocket.send(payloadBuffer, 0, payloadBuffer.length, port, ip);
                 }
             });
