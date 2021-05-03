@@ -134,8 +134,8 @@ var GenericServer2 = /** @class */ (function () {
         });
         subscriber.on("message", function (chnl, message) {
             var e_2, _a, e_3, _b;
-            var jsonMsg = JSON.parse(message);
             console.log("subscription received: " + message);
+            var jsonMsg = JSON.parse(message);
             try {
                 for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
                     var channel = _d.value;
