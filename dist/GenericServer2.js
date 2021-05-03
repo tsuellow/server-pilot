@@ -51,6 +51,7 @@ var GenericServer2 = /** @class */ (function () {
         //redis client to get datagram recipients ...we will need to pass the redis url later on
         var subscriber = redis_1.default.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
         var publisher = redis_1.default.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
+        subscriber.subscribe(targetType + "Locations");
         //list of all connected users
         var connectionList = new Map();
         //channel infrastructure
@@ -131,9 +132,9 @@ var GenericServer2 = /** @class */ (function () {
                 }
             });
         });
-        subscriber.on(targetType + "Locations", function (msg) {
+        subscriber.on("message", function (chnl, message) {
             var e_2, _a, e_3, _b;
-            var jsonMsg = JSON.parse(msg);
+            var jsonMsg = JSON.parse(message);
             console.log("subscription received: " + jsonMsg.payloadCSV);
             try {
                 for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {

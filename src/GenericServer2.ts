@@ -34,6 +34,7 @@ export class GenericServer2 {
     //redis client to get datagram recipients ...we will need to pass the redis url later on
     const subscriber: redis.RedisClient = redis.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
     const publisher: redis.RedisClient = redis.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
+    subscriber.subscribe(targetType+"Locations");
 
     //list of all connected users
     const connectionList: Map<number, ConnectionObject> = new Map();
@@ -131,8 +132,8 @@ export class GenericServer2 {
       });
     });
 
-    subscriber.on(targetType+"Locations",function (msg:string) {
-      let jsonMsg: JsonMsg = JSON.parse(msg);
+    subscriber.on("message",function (chnl,message) {
+      let jsonMsg: JsonMsg = JSON.parse(message);
       console.log("subscription received: "+jsonMsg.payloadCSV)
       for (const channel of jsonMsg.targetChannels) {
         const chName:string=getSingleChannelName(channel,jsonMsg.city,ownType);
