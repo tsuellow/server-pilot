@@ -134,6 +134,7 @@ var GenericServer2 = /** @class */ (function () {
         subscriber.on(targetType + "Locations", function (msg) {
             var e_2, _a, e_3, _b;
             var jsonMsg = JSON.parse(msg);
+            console.log("subscription received: " + jsonMsg.payloadCSV);
             try {
                 for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
                     var channel = _d.value;
@@ -143,6 +144,7 @@ var GenericServer2 = /** @class */ (function () {
                         try {
                             for (var _e = (e_3 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
                                 var value = _f.value;
+                                console.log(value.ip + "::::" + value.port);
                                 udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
                             }
                         }

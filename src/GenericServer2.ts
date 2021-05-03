@@ -133,11 +133,13 @@ export class GenericServer2 {
 
     subscriber.on(targetType+"Locations",function (msg:string) {
       let jsonMsg: JsonMsg = JSON.parse(msg);
+      console.log("subscription received: "+jsonMsg.payloadCSV)
       for (const channel of jsonMsg.targetChannels) {
         const chName:string=getSingleChannelName(channel,jsonMsg.city,ownType);
         const list=distributionChannels.get(chName);
         if(list){
           for (let value of list.values()) {
+            console.log(value.ip+"::::"+value.port);
             udpSocket.send(jsonMsg.payloadCSV,value.port,value.ip);
           }
         }
