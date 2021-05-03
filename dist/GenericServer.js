@@ -57,6 +57,7 @@ var GenericServer = /** @class */ (function () {
         });
         var udpSocket = dgram_1.default.createSocket("udp4");
         udpSocket.bind(this.udpPort, this.ownIp);
+        var otherUdp = dgram_1.default.createSocket("udp4");
         wsServer.on("listening", function (server) {
             console.log(ownType + " server is listening on port " + _this.wsPort);
         });
@@ -159,7 +160,7 @@ var GenericServer = /** @class */ (function () {
                     var ip = addresses[i].split(":")[0];
                     console.log(port);
                     console.log(ip);
-                    udpSocket.send(payload, port, ip);
+                    otherUdp.send(payload, port, ip);
                 }
             });
         }

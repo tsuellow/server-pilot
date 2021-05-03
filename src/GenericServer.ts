@@ -39,6 +39,8 @@ export class GenericServer {
     const udpSocket: dgram.Socket = dgram.createSocket("udp4");
     udpSocket.bind(this.udpPort, this.ownIp);
 
+    const otherUdp: dgram.Socket =dgram.createSocket("udp4");
+
     wsServer.on("listening", (server: WebSocket.Server) => {
       console.log(ownType+" server is listening on port "+this.wsPort);
     });
@@ -152,7 +154,7 @@ export class GenericServer {
           const ip: string = addresses[i].split(":")[0];
           console.log(port);
           console.log(ip);
-          udpSocket.send(payload, port, ip);
+          otherUdp.send(payload, port, ip);
         }
       });
     }
