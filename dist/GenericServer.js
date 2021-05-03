@@ -159,7 +159,7 @@ var GenericServer = /** @class */ (function () {
                     var ip = addresses[i].split(":")[0];
                     console.log(port);
                     console.log(ip);
-                    udpSocket.send(payloadBuffer, 0, payloadBuffer.length, port, ip);
+                    udpSocket.send(payload, port, ip);
                 }
             });
         }
