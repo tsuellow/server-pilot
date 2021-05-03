@@ -72,7 +72,7 @@ export class GenericServer {
               // 2 processes:
               //1. publish location payload on redis for counterpart(drivers) to diseminate
               //2. find channel delta and tell redis add and remove connection from corresponding channels
-              for (var i:number=0;i<jsonMsg.receptionChannels.length;i++) {
+              for (var i:number=0;i<jsonMsg.targetChannels.length;i++) {
                 sendOwnLocationOut(
                   getSingleChannelName(
                     jsonMsg.targetChannels[i],
@@ -90,7 +90,7 @@ export class GenericServer {
               break;
             default:
               // publish location payload on redis for counterpart(drivers) to diseminate
-              for (var i:number=0;i<jsonMsg.receptionChannels.length;i++) {
+              for (var i:number=0;i<jsonMsg.targetChannels.length;i++) {
                 sendOwnLocationOut(
                   getSingleChannelName(
                     jsonMsg.targetChannels[i],

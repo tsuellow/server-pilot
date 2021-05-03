@@ -84,7 +84,7 @@ var GenericServer = /** @class */ (function () {
                             // 2 processes:
                             //1. publish location payload on redis for counterpart(drivers) to diseminate
                             //2. find channel delta and tell redis add and remove connection from corresponding channels
-                            for (var i = 0; i < jsonMsg.receptionChannels.length; i++) {
+                            for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
                                 sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), jsonMsg.payloadCSV);
                             }
                             var existingConn = connectionList.get(jsonMsg.taxiId);
@@ -94,7 +94,7 @@ var GenericServer = /** @class */ (function () {
                             break;
                         default:
                             // publish location payload on redis for counterpart(drivers) to diseminate
-                            for (var i = 0; i < jsonMsg.receptionChannels.length; i++) {
+                            for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
                                 sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), jsonMsg.payloadCSV);
                             }
                     }
