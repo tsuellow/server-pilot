@@ -91,7 +91,7 @@ export class GenericServer2 {
                     jsonMsg.city!,
                     targetType
                   ),
-                  jsonMsg.payloadCSV
+                  message
                 );
               }
               
