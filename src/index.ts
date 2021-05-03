@@ -1,9 +1,9 @@
-import { GenericServer } from "./GenericServer";
+import { GenericServer2 } from "./GenericServer2";
 
 //add code to get ip address
 //add ip to ip pool on redis
 
-const clientServer: GenericServer = new GenericServer(
+const clientServer: GenericServer2 = new GenericServer2(
   "client",
   "driver",
   3000,
@@ -13,7 +13,7 @@ const clientServer: GenericServer = new GenericServer(
 
 clientServer.startServer();
 
-const driverServer: GenericServer = new GenericServer(
+const driverServer: GenericServer2 = new GenericServer2(
   "driver",
   "client",
   4000,

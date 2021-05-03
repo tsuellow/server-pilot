@@ -3,7 +3,8 @@ export class ConnectionObject {
     taxiId:number;
     city:string;
     ws:WebSocket;
-    dgramChannel:string='0.0.0.0:0';
+    dgramAddress:string='0.0.0.0';
+    dgramPort:number=0;
     receptionChannels:number[]= [];
     timestamp:number=0;
 
@@ -13,8 +14,11 @@ export class ConnectionObject {
         this.ws = ws;
     }
 
-    addDgramChannel(dgramChanel:string) {
-        this.dgramChannel = dgramChanel;
+    addDgramAddress(dgramAddress:string) {
+        this.dgramAddress = dgramAddress;
+    }
+    addDgramPort(drgamPort:number){
+        this.dgramPort=drgamPort;
     }
 
     setReceptionChannels(receptionChannels:number[]) {
