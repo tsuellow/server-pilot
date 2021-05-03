@@ -134,7 +134,7 @@ export class GenericServer2 {
 
     subscriber.on("message",function (chnl,message) {
       let jsonMsg: JsonMsg = JSON.parse(message);
-      console.log("subscription received: "+jsonMsg.payloadCSV)
+      console.log("subscription received: "+message)
       for (const channel of jsonMsg.targetChannels) {
         const chName:string=getSingleChannelName(channel,jsonMsg.city,ownType);
         const list=distributionChannels.get(chName);
