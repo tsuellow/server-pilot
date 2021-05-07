@@ -39,6 +39,17 @@ export class GenericServer2 {
     //list of all connected users
     const connectionList: Map<number, ConnectionObject> = new Map();
 
+    //periodically close inactive connections
+    const interval=setInterval(function () {
+      for (const [key, value] of connectionList) {
+          if(new Date().getTime()-value.timestamp>120000){
+              updateOwnChannels(value,[]);
+              value.ws.close();
+              connectionList.delete(key);
+          }
+      }
+    },60000);
+
     //channel infrastructure
     const distributionChannels:Map<string,Map<number,UdpConn>>=new Map();
 
@@ -67,54 +78,41 @@ export class GenericServer2 {
           let jsonMsg: JsonMsg = JSON.parse(message);
           let type: number = jsonMsg.type;
 
-          switch (type) {
-            case 0:
-              // connection process: add to connection list and tell user to send matching dgram for connection matching
-              let conn: ConnectionObject = new ConnectionObject(
-                jsonMsg.taxiId,
-                jsonMsg.city,
-                ws
+          if(type==0){
+            // connection process: add to connection list and tell user to send matching dgram for connection matching
+            let conn: ConnectionObject = new ConnectionObject(
+              jsonMsg.taxiId,
+              jsonMsg.city,
+              ws
+            );
+            connectionList.set(jsonMsg.taxiId, conn);
+            var response = { type: 0, action: "SEND UDP" };
+            ws.send(JSON.stringify(response));
+            console.log(response);
+          }else{
+            //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
+            for (var i:number=0;i<jsonMsg.targetChannels.length;i++) {
+              sendOwnLocationOut(
+                getSingleChannelName(
+                  jsonMsg.targetChannels[i],
+                  jsonMsg.city!,
+                  targetType
+                ),
+                message
               );
-              connectionList.set(jsonMsg.taxiId, conn);
-              var response = { type: 0, action: "SEND UDP" };
-              ws.send(JSON.stringify(response));
-              console.log(response);
-              break;
-            case 2:
-              // 2 processes:
-              //1. publish location payload on redis for counterpart(drivers) to diseminate
-              //2. find channel delta and tell redis add and remove connection from corresponding channels
-              for (var i:number=0;i<jsonMsg.targetChannels.length;i++) {
-                sendOwnLocationOut(
-                  getSingleChannelName(
-                    jsonMsg.targetChannels[i],
-                    jsonMsg.city!,
-                    targetType
-                  ),
-                  message
-                );
-              }
-              
-              let existingConn = connectionList.get(jsonMsg.taxiId);
-              if (existingConn) {
+            }
+            
+            let existingConn = connectionList.get(jsonMsg.taxiId);
+            if (existingConn) {
+              existingConn.updateTime();
+              //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
+              if(type==2){
                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
               }
-              break;
-            default:
-              // publish location payload on redis for counterpart(drivers) to diseminate
-              for (var i:number=0;i<jsonMsg.targetChannels.length;i++) {
-                sendOwnLocationOut(
-                  getSingleChannelName(
-                    jsonMsg.targetChannels[i],
-                    jsonMsg.city!,
-                    targetType
-                  ),
-                  message
-                );
-              }
+            }
           }
         } catch {
-          ws.send("illegal msg");
+          ws.send("ILLEGAL MSG");
         }
       });
 
@@ -223,6 +221,7 @@ export class GenericServer2 {
           distributionChannels.get(iterator)?.set(connObj.taxiId,{ip:connObj.dgramAddress,port:connObj.dgramPort});
         }
       }
+      connObj.setReceptionChannels(newChannels);
     }
   }
 }

@@ -10,7 +10,11 @@ var ConnectionObject = /** @class */ (function () {
         this.taxiId = taxiId;
         this.city = city;
         this.ws = ws;
+        this.updateTime();
     }
+    ConnectionObject.prototype.updateTime = function () {
+        this.timestamp = new Date().getTime();
+    };
     ConnectionObject.prototype.addDgramAddress = function (dgramAddress) {
         this.dgramAddress = dgramAddress;
     };

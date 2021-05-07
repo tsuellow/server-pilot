@@ -12,6 +12,11 @@ export class ConnectionObject {
         this.taxiId = taxiId;
         this.city = city;
         this.ws = ws;
+        this.updateTime();
+    }
+
+    updateTime(){
+        this.timestamp=new Date().getTime();
     }
 
     addDgramAddress(dgramAddress:string) {

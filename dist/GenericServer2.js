@@ -54,6 +54,27 @@ var GenericServer2 = /** @class */ (function () {
         subscriber.subscribe(targetType + "Locations");
         //list of all connected users
         var connectionList = new Map();
+        //periodically close inactive connections
+        var interval = setInterval(function () {
+            var e_1, _a;
+            try {
+                for (var connectionList_1 = __values(connectionList), connectionList_1_1 = connectionList_1.next(); !connectionList_1_1.done; connectionList_1_1 = connectionList_1.next()) {
+                    var _b = __read(connectionList_1_1.value, 2), key = _b[0], value = _b[1];
+                    if (new Date().getTime() - value.timestamp > 120000) {
+                        updateOwnChannels(value, []);
+                        value.ws.close();
+                        connectionList.delete(key);
+                    }
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (connectionList_1_1 && !connectionList_1_1.done && (_a = connectionList_1.return)) _a.call(connectionList_1);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+        }, 60000);
         //channel infrastructure
         var distributionChannels = new Map();
         var wsServer = new ws_1.default.Server({
@@ -76,44 +97,39 @@ var GenericServer2 = /** @class */ (function () {
                 try {
                     var jsonMsg = JSON.parse(message);
                     var type = jsonMsg.type;
-                    switch (type) {
-                        case 0:
-                            // connection process: add to connection list and tell user to send matching dgram for connection matching
-                            var conn = new ConnectionObject_1.ConnectionObject(jsonMsg.taxiId, jsonMsg.city, ws);
-                            connectionList.set(jsonMsg.taxiId, conn);
-                            var response = { type: 0, action: "SEND UDP" };
-                            ws.send(JSON.stringify(response));
-                            console.log(response);
-                            break;
-                        case 2:
-                            // 2 processes:
-                            //1. publish location payload on redis for counterpart(drivers) to diseminate
-                            //2. find channel delta and tell redis add and remove connection from corresponding channels
-                            for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
-                                sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), message);
-                            }
-                            var existingConn = connectionList.get(jsonMsg.taxiId);
-                            if (existingConn) {
+                    if (type == 0) {
+                        // connection process: add to connection list and tell user to send matching dgram for connection matching
+                        var conn = new ConnectionObject_1.ConnectionObject(jsonMsg.taxiId, jsonMsg.city, ws);
+                        connectionList.set(jsonMsg.taxiId, conn);
+                        var response = { type: 0, action: "SEND UDP" };
+                        ws.send(JSON.stringify(response));
+                        console.log(response);
+                    }
+                    else {
+                        //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
+                        for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
+                            sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), message);
+                        }
+                        var existingConn = connectionList.get(jsonMsg.taxiId);
+                        if (existingConn) {
+                            existingConn.updateTime();
+                            //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
+                            if (type == 2) {
                                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
                             }
-                            break;
-                        default:
-                            // publish location payload on redis for counterpart(drivers) to diseminate
-                            for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
-                                sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), message);
-                            }
+                        }
                     }
                 }
                 catch (_a) {
-                    ws.send("illegal msg");
+                    ws.send("ILLEGAL MSG");
                 }
             });
             //when connection is ended the client is first removed from the delivery group
             ws.on("close", function (code, reason) {
-                var e_1, _a;
+                var e_2, _a;
                 try {
-                    for (var connectionList_1 = __values(connectionList), connectionList_1_1 = connectionList_1.next(); !connectionList_1_1.done; connectionList_1_1 = connectionList_1.next()) {
-                        var _b = __read(connectionList_1_1.value, 2), key = _b[0], value = _b[1];
+                    for (var connectionList_2 = __values(connectionList), connectionList_2_1 = connectionList_2.next(); !connectionList_2_1.done; connectionList_2_1 = connectionList_2.next()) {
+                        var _b = __read(connectionList_2_1.value, 2), key = _b[0], value = _b[1];
                         if (ws == value.ws) {
                             var conn = connectionList.get(key);
                             //@ts-ignore
@@ -123,17 +139,17 @@ var GenericServer2 = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
                 finally {
                     try {
-                        if (connectionList_1_1 && !connectionList_1_1.done && (_a = connectionList_1.return)) _a.call(connectionList_1);
+                        if (connectionList_2_1 && !connectionList_2_1.done && (_a = connectionList_2.return)) _a.call(connectionList_2);
                     }
-                    finally { if (e_1) throw e_1.error; }
+                    finally { if (e_2) throw e_2.error; }
                 }
             });
         });
         subscriber.on("message", function (chnl, message) {
-            var e_2, _a, e_3, _b;
+            var e_3, _a, e_4, _b;
             console.log("subscription received: " + message);
             var jsonMsg = JSON.parse(message);
             try {
@@ -143,28 +159,28 @@ var GenericServer2 = /** @class */ (function () {
                     var list = distributionChannels.get(chName);
                     if (list) {
                         try {
-                            for (var _e = (e_3 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
+                            for (var _e = (e_4 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
                                 var value = _f.value;
                                 console.log(value.ip + "::::" + value.port);
                                 udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
                             }
                         }
-                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                        catch (e_4_1) { e_4 = { error: e_4_1 }; }
                         finally {
                             try {
                                 if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
                             }
-                            finally { if (e_3) throw e_3.error; }
+                            finally { if (e_4) throw e_4.error; }
                         }
                     }
                 }
             }
-            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+            catch (e_3_1) { e_3 = { error: e_3_1 }; }
             finally {
                 try {
                     if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
-                finally { if (e_2) throw e_2.error; }
+                finally { if (e_3) throw e_3.error; }
             }
         });
         udpSocket.on("message", function (message, remote) {
@@ -196,7 +212,7 @@ var GenericServer2 = /** @class */ (function () {
         }
         //this function updates the channels tuned into
         function updateOwnChannels(connObj, newChannels, resetAll) {
-            var e_4, _a, e_5, _b, e_6, _c;
+            var e_5, _a, e_6, _b, e_7, _c;
             var _d, _e, _f;
             if (resetAll === void 0) { resetAll = false; }
             if (resetAll) {
@@ -211,12 +227,12 @@ var GenericServer2 = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                catch (e_5_1) { e_5 = { error: e_5_1 }; }
                 finally {
                     try {
                         if (toModify_1_1 && !toModify_1_1.done && (_a = toModify_1.return)) _a.call(toModify_1);
                     }
-                    finally { if (e_4) throw e_4.error; }
+                    finally { if (e_5) throw e_5.error; }
                 }
             }
             else {
@@ -232,12 +248,12 @@ var GenericServer2 = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                catch (e_6_1) { e_6 = { error: e_6_1 }; }
                 finally {
                     try {
                         if (toRemove_1_1 && !toRemove_1_1.done && (_b = toRemove_1.return)) _b.call(toRemove_1);
                     }
-                    finally { if (e_5) throw e_5.error; }
+                    finally { if (e_6) throw e_6.error; }
                 }
                 try {
                     for (var toAdd_1 = __values(toAdd), toAdd_1_1 = toAdd_1.next(); !toAdd_1_1.done; toAdd_1_1 = toAdd_1.next()) {
@@ -249,14 +265,15 @@ var GenericServer2 = /** @class */ (function () {
                         (_f = distributionChannels.get(iterator)) === null || _f === void 0 ? void 0 : _f.set(connObj.taxiId, { ip: connObj.dgramAddress, port: connObj.dgramPort });
                     }
                 }
-                catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                catch (e_7_1) { e_7 = { error: e_7_1 }; }
                 finally {
                     try {
                         if (toAdd_1_1 && !toAdd_1_1.done && (_c = toAdd_1.return)) _c.call(toAdd_1);
                     }
-                    finally { if (e_6) throw e_6.error; }
+                    finally { if (e_7) throw e_7.error; }
                 }
             }
+            connObj.setReceptionChannels(newChannels);
         }
     };
     return GenericServer2;
