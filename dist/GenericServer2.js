@@ -49,8 +49,8 @@ var GenericServer2 = /** @class */ (function () {
         var ownType = this.ownType;
         var targetType = this.targetType;
         //redis client to get datagram recipients ...we will need to pass the redis url later on
-        var subscriber = redis_1.default.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
-        var publisher = redis_1.default.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
+        var subscriber = redis_1.default.createClient("redis://redis-pub-sub.3uqrcc.0001.use1.cache.amazonaws.com:6379");
+        var publisher = redis_1.default.createClient("redis://redis-pub-sub.3uqrcc.0001.use1.cache.amazonaws.com:6379");
         subscriber.subscribe(targetType + "Locations");
         //list of all connected users
         var connectionList = new Map();
@@ -63,7 +63,9 @@ var GenericServer2 = /** @class */ (function () {
                     if (new Date().getTime() - value.timestamp > 120000) {
                         updateOwnChannels(value, []);
                         value.ws.close();
+                        console.log("deletion of taxiId: " + value.taxiId + " being performed due to caducation on list of size: " + connectionList.size);
                         connectionList.delete(key);
+                        console.log("new size: " + connectionList.size);
                     }
                 }
             }
@@ -133,8 +135,10 @@ var GenericServer2 = /** @class */ (function () {
                         if (ws == value.ws) {
                             var conn = connectionList.get(key);
                             //@ts-ignore
+                            console.log("disconnecting taxiId: " + (conn === null || conn === void 0 ? void 0 : conn.taxiId));
                             updateOwnChannels(conn, []);
                             connectionList.delete(key);
+                            console.log("new size: " + connectionList.size);
                             return;
                         }
                     }

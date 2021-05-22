@@ -32,8 +32,8 @@ export class GenericServer2 {
     const targetType: string = this.targetType;
 
     //redis client to get datagram recipients ...we will need to pass the redis url later on
-    const subscriber: redis.RedisClient = redis.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
-    const publisher: redis.RedisClient = redis.createClient("redis://redis-conn-store.3uqrcc.ng.0001.use1.cache.amazonaws.com:6379");
+    const subscriber: redis.RedisClient = redis.createClient("redis://redis-pub-sub.3uqrcc.0001.use1.cache.amazonaws.com:6379");
+    const publisher: redis.RedisClient = redis.createClient("redis://redis-pub-sub.3uqrcc.0001.use1.cache.amazonaws.com:6379");
     subscriber.subscribe(targetType+"Locations");
 
     //list of all connected users
@@ -45,7 +45,9 @@ export class GenericServer2 {
           if(new Date().getTime()-value.timestamp>120000){
               updateOwnChannels(value,[]);
               value.ws.close();
+              console.log("deletion of taxiId: "+value.taxiId+" being performed due to caducation on list of size: "+connectionList.size);
               connectionList.delete(key);
+              console.log("new size: "+connectionList.size);
           }
       }
     },60000);
@@ -122,8 +124,10 @@ export class GenericServer2 {
           if (ws == value.ws) {
             let conn = connectionList.get(key);
             //@ts-ignore
-            updateOwnChannels(conn, []);
+            console.log("disconnecting taxiId: "+conn?.taxiId);
+            updateOwnChannels(conn!, []);
             connectionList.delete(key);
+            console.log("new size: "+connectionList.size);
             return;
           }
         }
