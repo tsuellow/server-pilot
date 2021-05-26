@@ -124,7 +124,7 @@ export class GenericServer2 {
           if (ws == value.ws) {
             let conn = connectionList.get(key);
             //@ts-ignore
-            console.log("disconnecting taxiId: "+conn?.taxiId);
+            console.log("disconnecting taxiId: "+conn?.taxiId+" code:"+code+" reason:"+reason);
             updateOwnChannels(conn!, []);
             connectionList.delete(key);
             console.log("new size: "+connectionList.size);

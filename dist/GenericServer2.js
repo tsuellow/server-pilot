@@ -135,7 +135,7 @@ var GenericServer2 = /** @class */ (function () {
                         if (ws == value.ws) {
                             var conn = connectionList.get(key);
                             //@ts-ignore
-                            console.log("disconnecting taxiId: " + (conn === null || conn === void 0 ? void 0 : conn.taxiId));
+                            console.log("disconnecting taxiId: " + (conn === null || conn === void 0 ? void 0 : conn.taxiId) + " code:" + code + " reason:" + reason);
                             updateOwnChannels(conn, []);
                             connectionList.delete(key);
                             console.log("new size: " + connectionList.size);
