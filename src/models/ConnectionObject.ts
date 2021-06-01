@@ -1,11 +1,12 @@
 import WebSocket from 'ws';
+
 export class ConnectionObject {
     taxiId:number;
     city:string;
     ws:WebSocket;
     dgramAddress:string='0.0.0.0';
     dgramPort:number=0;
-    targetChannels:number[]=[];
+    latestMsg:string='';
     receptionChannels:number[]= [];
     timestamp:number=0;
 
@@ -27,8 +28,8 @@ export class ConnectionObject {
         this.dgramPort=drgamPort;
     }
 
-    setTargetChannels(targetChannels:number[]){
-        this.targetChannels=targetChannels;
+    setLatestMsg(msg:string){
+        this.latestMsg=msg;
     }
 
     setReceptionChannels(receptionChannels:number[]) {

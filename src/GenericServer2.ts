@@ -109,7 +109,7 @@ export class GenericServer2 {
             let existingConn = connectionList.get(jsonMsg.taxiId);
             if (existingConn) {
               existingConn.updateTime();
-              existingConn.setTargetChannels(jsonMsg.targetChannels);
+              existingConn.setLatestMsg(message);
               //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
               if(type==2){
                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
@@ -129,16 +129,22 @@ export class GenericServer2 {
             //@ts-ignore
             console.log("disconnecting taxiId: "+conn?.taxiId+" code:"+code+" reason:"+reason);
             if(code==1006){
-              for (var i:number=0;i<value.targetChannels.length;i++) {
-                sendOwnLocationOut(
-                  getSingleChannelName(
-                    value.targetChannels[i],
-                    value.city!,
-                    targetType
-                  ),
-                  createClosingMsg(key)
-                );
+              try{
+                let latestMsg: JsonMsg = JSON.parse(value.latestMsg);
+                for (var i:number=0;i<latestMsg.targetChannels.length;i++) {
+                  sendOwnLocationOut(
+                    getSingleChannelName(
+                      latestMsg.targetChannels[i],
+                      latestMsg.city!,
+                      targetType
+                    ),
+                    JSON.stringify(createClosingMsg(latestMsg))
+                  );
+                }
+              }catch{
+                console.log("failed to send closing msg")
               }
+              
             }
             updateOwnChannels(conn!, []);
             connectionList.delete(key);
@@ -187,8 +193,9 @@ export class GenericServer2 {
     });
 
     //this function creates a generic closing msg for when a user gets disconnected abruptly
-    function createClosingMsg(taxiId:number):string{
-      return taxiId+"|0.0|0.0|0.0|0.0|t|0.0|0.0|0"
+    function createClosingMsg(lastMsg:JsonMsg):JsonMsg{
+      lastMsg.payloadCSV=lastMsg.payloadCSV.slice(0,-1)+"0";
+      return lastMsg;
     }
 
     //this function sends my location to all parties in the channel delivery group
