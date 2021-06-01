@@ -18,6 +18,8 @@ interface UdpConn {
   port:number;
 }
 
+
+
 export class GenericServer2 {
   constructor(
     public ownType: string,
@@ -107,6 +109,7 @@ export class GenericServer2 {
             let existingConn = connectionList.get(jsonMsg.taxiId);
             if (existingConn) {
               existingConn.updateTime();
+              existingConn.setTargetChannels(jsonMsg.targetChannels);
               //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
               if(type==2){
                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
@@ -125,6 +128,18 @@ export class GenericServer2 {
             let conn = connectionList.get(key);
             //@ts-ignore
             console.log("disconnecting taxiId: "+conn?.taxiId+" code:"+code+" reason:"+reason);
+            if(code==1006){
+              for (var i:number=0;i<value.targetChannels.length;i++) {
+                sendOwnLocationOut(
+                  getSingleChannelName(
+                    value.targetChannels[i],
+                    value.city!,
+                    targetType
+                  ),
+                  createClosingMsg(key)
+                );
+              }
+            }
             updateOwnChannels(conn!, []);
             connectionList.delete(key);
             console.log("new size: "+connectionList.size);
@@ -170,6 +185,11 @@ export class GenericServer2 {
         }
       }
     });
+
+    //this function creates a generic closing msg for when a user gets disconnected abruptly
+    function createClosingMsg(taxiId:number):string{
+      return taxiId+"|0.0|0.0|0.0|0.0|t|0.0|0.0|0"
+    }
 
     //this function sends my location to all parties in the channel delivery group
     function sendOwnLocationOut(channel: string, msg: string): void {

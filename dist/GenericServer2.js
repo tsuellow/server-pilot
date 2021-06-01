@@ -115,6 +115,7 @@ var GenericServer2 = /** @class */ (function () {
                         var existingConn = connectionList.get(jsonMsg.taxiId);
                         if (existingConn) {
                             existingConn.updateTime();
+                            existingConn.setTargetChannels(jsonMsg.targetChannels);
                             //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
                             if (type == 2) {
                                 updateOwnChannels(existingConn, jsonMsg.receptionChannels);
@@ -136,6 +137,11 @@ var GenericServer2 = /** @class */ (function () {
                             var conn = connectionList.get(key);
                             //@ts-ignore
                             console.log("disconnecting taxiId: " + (conn === null || conn === void 0 ? void 0 : conn.taxiId) + " code:" + code + " reason:" + reason);
+                            if (code == 1006) {
+                                for (var i = 0; i < value.targetChannels.length; i++) {
+                                    sendOwnLocationOut(utils_1.getSingleChannelName(value.targetChannels[i], value.city, targetType), createClosingMsg(key));
+                                }
+                            }
                             updateOwnChannels(conn, []);
                             connectionList.delete(key);
                             console.log("new size: " + connectionList.size);
@@ -209,6 +215,10 @@ var GenericServer2 = /** @class */ (function () {
                 }
             }
         });
+        //this function creates a generic closing msg for when a user gets disconnected abruptly
+        function createClosingMsg(taxiId) {
+            return taxiId + "|0.0|0.0|0.0|0.0|t|0.0|0.0|0";
+        }
         //this function sends my location to all parties in the channel delivery group
         function sendOwnLocationOut(channel, msg) {
             console.log("getting channel: " + channel);

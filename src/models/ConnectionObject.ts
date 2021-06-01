@@ -5,6 +5,7 @@ export class ConnectionObject {
     ws:WebSocket;
     dgramAddress:string='0.0.0.0';
     dgramPort:number=0;
+    targetChannels:number[]=[];
     receptionChannels:number[]= [];
     timestamp:number=0;
 
@@ -24,6 +25,10 @@ export class ConnectionObject {
     }
     addDgramPort(drgamPort:number){
         this.dgramPort=drgamPort;
+    }
+
+    setTargetChannels(targetChannels:number[]){
+        this.targetChannels=targetChannels;
     }
 
     setReceptionChannels(receptionChannels:number[]) {

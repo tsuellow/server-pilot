@@ -5,6 +5,7 @@ var ConnectionObject = /** @class */ (function () {
     function ConnectionObject(taxiId, city, ws) {
         this.dgramAddress = '0.0.0.0';
         this.dgramPort = 0;
+        this.targetChannels = [];
         this.receptionChannels = [];
         this.timestamp = 0;
         this.taxiId = taxiId;
@@ -20,6 +21,9 @@ var ConnectionObject = /** @class */ (function () {
     };
     ConnectionObject.prototype.addDgramPort = function (drgamPort) {
         this.dgramPort = drgamPort;
+    };
+    ConnectionObject.prototype.setTargetChannels = function (targetChannels) {
+        this.targetChannels = targetChannels;
     };
     ConnectionObject.prototype.setReceptionChannels = function (receptionChannels) {
         this.receptionChannels = receptionChannels;
