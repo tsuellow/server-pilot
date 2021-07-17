@@ -8,7 +8,7 @@ const clientServer: GenericServer2 = new GenericServer2(
   "driver",
   3000,
   33333,
-  "172.31.93.111"
+  "172.31.3.81"
 );
 
 clientServer.startServer();
@@ -18,7 +18,7 @@ const driverServer: GenericServer2 = new GenericServer2(
   "client",
   4000,
   44444,
-  "172.31.93.111"
+  "172.31.3.81"
 );
 
 driverServer.startServer();
