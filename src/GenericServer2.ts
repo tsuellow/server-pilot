@@ -4,6 +4,8 @@ import redis from "redis";
 import { ConnectionObject } from "./models/ConnectionObject";
 import { getSingleChannelName, getMultipleChannelNames } from "./models/utils";
 
+
+
 interface JsonMsg {
   type: number;
   taxiId: number;
@@ -18,31 +20,33 @@ interface UdpConn {
   port:number;
 }
 
-
-
 export class GenericServer2 {
   constructor(
     public ownType: string,
     public targetType: string,
     public wsPort: number,
     public udpPort: number,
-    public ownIp: string
+    public ownIp: string,
+    public redisEndpoint: string
   ) {}
+
+  public deathwish:boolean=false;
 
   startServer(): void {
     const ownType: string = this.ownType;
     const targetType: string = this.targetType;
 
     //redis client to get datagram recipients ...we will need to pass the redis url later on
-    const subscriber: redis.RedisClient = redis.createClient("redis://redisserver.3uqrcc.0001.use1.cache.amazonaws.com:6379");
-    const publisher: redis.RedisClient = redis.createClient("redis://redisserver.3uqrcc.0001.use1.cache.amazonaws.com:6379");
+    const subscriber: redis.RedisClient = redis.createClient(this.redisEndpoint);
+    const publisher: redis.RedisClient = redis.createClient(this.redisEndpoint);
     subscriber.subscribe(targetType+"Locations");
 
     //list of all connected users
     const connectionList: Map<number, ConnectionObject> = new Map();
 
     //periodically close inactive connections
-    const interval=setInterval(function () {
+    const interval=setInterval( () => {
+     
       for (const [key, value] of connectionList) {
           if(new Date().getTime()-value.timestamp>120000){
               updateOwnChannels(value,[]);
@@ -104,15 +108,22 @@ export class GenericServer2 {
                 ),
                 message
               );
-            }
-            
+            }        
             let existingConn = connectionList.get(jsonMsg.taxiId);
             if (existingConn) {
-              existingConn.updateTime();
-              existingConn.setLatestMsg(message);
-              //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
-              if(type==2){
-                updateOwnChannels(existingConn, jsonMsg.receptionChannels);
+              //if deathwish let this connection play russian roulette
+              if(this.deathwish && Math.random()<=0.01){
+                updateOwnChannels(existingConn,[]);
+                ws.close(1006,"shutting down server");
+                console.log("deletion of taxiId: "+jsonMsg.taxiId+" being performed due to slow suicide procedure");
+                connectionList.delete(jsonMsg.taxiId);
+              }else{
+                existingConn.updateTime();
+                existingConn.setLatestMsg(message);
+                //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
+                if(type==2){
+                  updateOwnChannels(existingConn, jsonMsg.receptionChannels);
+                }
               }
             }
           }
