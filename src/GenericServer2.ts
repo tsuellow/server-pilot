@@ -4,8 +4,6 @@ import redis from "redis";
 import { ConnectionObject } from "./models/ConnectionObject";
 import { getSingleChannelName, getMultipleChannelNames } from "./models/utils";
 
-
-
 interface JsonMsg {
   type: number;
   taxiId: number;
@@ -16,11 +14,13 @@ interface JsonMsg {
 }
 
 interface UdpConn {
-  ip:string;
-  port:number;
+  ip: string;
+  port: number;
 }
 
 export class GenericServer2 {
+  private deathwish: boolean = false;
+
   constructor(
     public ownType: string,
     public targetType: string,
@@ -30,36 +30,45 @@ export class GenericServer2 {
     public redisEndpoint: string
   ) {}
 
-  public deathwish:boolean=false;
+  public setDeathWish(trigger: boolean) {
+    this.deathwish = trigger;
+  }
 
   startServer(): void {
     const ownType: string = this.ownType;
     const targetType: string = this.targetType;
 
     //redis client to get datagram recipients ...we will need to pass the redis url later on
-    const subscriber: redis.RedisClient = redis.createClient(this.redisEndpoint);
+    const subscriber: redis.RedisClient = redis.createClient(
+      this.redisEndpoint
+    );
     const publisher: redis.RedisClient = redis.createClient(this.redisEndpoint);
-    subscriber.subscribe(targetType+"Locations");
+    subscriber.subscribe(targetType + "Locations");
 
     //list of all connected users
     const connectionList: Map<number, ConnectionObject> = new Map();
 
     //periodically close inactive connections
-    const interval=setInterval( () => {
-     
+    
+    const interval = setInterval(() => {
       for (const [key, value] of connectionList) {
-          if(new Date().getTime()-value.timestamp>120000){
-              updateOwnChannels(value,[]);
-              value.ws.close();
-              console.log("deletion of taxiId: "+value.taxiId+" being performed due to caducation on list of size: "+connectionList.size);
-              connectionList.delete(key);
-              console.log("new size: "+connectionList.size);
-          }
+        if (new Date().getTime() - value.timestamp > 120000) {
+          updateOwnChannels(value, []);
+          value.ws.close();
+          console.log(
+            "deletion of taxiId: " +
+              value.taxiId +
+              " being performed due to caducation on list of size: " +
+              connectionList.size
+          );
+          connectionList.delete(key);
+          console.log("new size: " + connectionList.size);
+        }
       }
-    },60000);
+    }, 60000);
 
     //channel infrastructure
-    const distributionChannels:Map<string,Map<number,UdpConn>>=new Map();
+    const distributionChannels: Map<string, Map<number, UdpConn>> = new Map();
 
     const wsServer: WebSocket.Server = new WebSocket.Server({
       port: this.wsPort,
@@ -68,14 +77,12 @@ export class GenericServer2 {
     const udpSocket: dgram.Socket = dgram.createSocket("udp4");
     udpSocket.bind(this.udpPort, this.ownIp);
 
-    const otherUdp: dgram.Socket =dgram.createSocket("udp4");
-
-    wsServer.on("listening", (server: WebSocket.Server) => {
-      console.log(ownType+" server is listening on port "+this.wsPort);
+    wsServer.on("listening", (_server: WebSocket.Server) => {
+      console.log(ownType + " server is listening on port " + this.wsPort);
     });
 
     wsServer.on("connection", (ws: WebSocket) => {
-      console.log("new connection registered")
+      console.log("new connection registered");
       ws.on("message", (message: string) => {
         //type:0 message is in order to perform initial connect process
         //type:1 message is in order to modify reception channels as well as transmitting own location
@@ -86,7 +93,7 @@ export class GenericServer2 {
           let jsonMsg: JsonMsg = JSON.parse(message);
           let type: number = jsonMsg.type;
 
-          if(type==0){
+          if (type == 0) {
             // connection process: add to connection list and tell user to send matching dgram for connection matching
             let conn: ConnectionObject = new ConnectionObject(
               jsonMsg.taxiId,
@@ -97,9 +104,9 @@ export class GenericServer2 {
             var response = { type: 0, action: "SEND UDP" };
             ws.send(JSON.stringify(response));
             console.log(response);
-          }else{
+          } else {
             //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
-            for (var i:number=0;i<jsonMsg.targetChannels.length;i++) {
+            for (var i: number = 0; i < jsonMsg.targetChannels.length; i++) {
               sendOwnLocationOut(
                 getSingleChannelName(
                   jsonMsg.targetChannels[i],
@@ -108,20 +115,24 @@ export class GenericServer2 {
                 ),
                 message
               );
-            }        
+            }
             let existingConn = connectionList.get(jsonMsg.taxiId);
             if (existingConn) {
               //if deathwish let this connection play russian roulette
-              if(this.deathwish && Math.random()<=0.01){
-                updateOwnChannels(existingConn,[]);
-                ws.close(1006,"shutting down server");
-                console.log("deletion of taxiId: "+jsonMsg.taxiId+" being performed due to slow suicide procedure");
+              if (this.deathwish && Math.random() <= 0.01) {
+                updateOwnChannels(existingConn, []);
+                ws.close(1006, "shutting down server");
+                console.log(
+                  "deletion of taxiId: " +
+                    jsonMsg.taxiId +
+                    " being performed due to slow suicide procedure"
+                );
                 connectionList.delete(jsonMsg.taxiId);
-              }else{
+              } else {
                 existingConn.updateTime();
                 existingConn.setLatestMsg(message);
                 //if type=2 find channel delta and tell distributionList to add and remove connection from corresponding channels
-                if(type==2){
+                if (type == 2) {
                   updateOwnChannels(existingConn, jsonMsg.receptionChannels);
                 }
               }
@@ -138,11 +149,22 @@ export class GenericServer2 {
           if (ws == value.ws) {
             let conn = connectionList.get(key);
             //@ts-ignore
-            console.log("disconnecting taxiId: "+conn?.taxiId+" code:"+code+" reason:"+reason);
-            if(code==1006){
-              try{
+            console.log(
+              "disconnecting taxiId: " +
+                conn?.taxiId +
+                " code:" +
+                code +
+                " reason:" +
+                reason
+            );
+            if (code == 1006) {
+              try {
                 let latestMsg: JsonMsg = JSON.parse(value.latestMsg);
-                for (var i:number=0;i<latestMsg.targetChannels.length;i++) {
+                for (
+                  var i: number = 0;
+                  i < latestMsg.targetChannels.length;
+                  i++
+                ) {
                   sendOwnLocationOut(
                     getSingleChannelName(
                       latestMsg.targetChannels[i],
@@ -152,34 +174,37 @@ export class GenericServer2 {
                     JSON.stringify(createClosingMsg(latestMsg))
                   );
                 }
-              }catch{
-                console.log("failed to send closing msg")
+              } catch {
+                console.log("failed to send closing msg");
               }
-              
             }
             updateOwnChannels(conn!, []);
             connectionList.delete(key);
-            console.log("new size: "+connectionList.size);
+            console.log("new size: " + connectionList.size);
             return;
           }
         }
       });
     });
 
-    subscriber.on("message",function (chnl,message) {
-      console.log("subscription received: "+message)
+    subscriber.on("message", function (chnl, message) {
+      console.log("subscription received: " + message);
       let jsonMsg: JsonMsg = JSON.parse(message);
       for (const channel of jsonMsg.targetChannels) {
-        const chName:string=getSingleChannelName(channel,jsonMsg.city,ownType);
-        const list=distributionChannels.get(chName);
-        if(list){
+        const chName: string = getSingleChannelName(
+          channel,
+          jsonMsg.city,
+          ownType
+        );
+        const list = distributionChannels.get(chName);
+        if (list) {
           for (let value of list.values()) {
-            console.log(value.ip+"::::"+value.port);
-            udpSocket.send(jsonMsg.payloadCSV,value.port,value.ip);
+            console.log(value.ip + "::::" + value.port);
+            udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
           }
         }
       }
-    })
+    });
 
     udpSocket.on("message", function (message, remote) {
       console.log(remote.address + ":" + remote.port + " - " + message);
@@ -196,7 +221,11 @@ export class GenericServer2 {
           const response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
           console.log(response);
           connObj?.ws.send(JSON.stringify(response));
-          udpSocket.send("testMsj",remote.port,remote.address);
+          udpSocket.send(
+            "udp hole successfully punched",
+            remote.port,
+            remote.address
+          ); //see if this arrives successfully at android
         } catch {
           console.warn("failed to process incomming UDP datagram");
         }
@@ -204,15 +233,15 @@ export class GenericServer2 {
     });
 
     //this function creates a generic closing msg for when a user gets disconnected abruptly
-    function createClosingMsg(lastMsg:JsonMsg):JsonMsg{
-      lastMsg.payloadCSV=lastMsg.payloadCSV.slice(0,-1)+"0";
+    function createClosingMsg(lastMsg: JsonMsg): JsonMsg {
+      lastMsg.payloadCSV = lastMsg.payloadCSV.slice(0, -1) + "0";
       return lastMsg;
     }
 
     //this function sends my location to all parties in the channel delivery group
     function sendOwnLocationOut(channel: string, msg: string): void {
-      console.log("getting channel: "+channel);
-      publisher.publish(ownType+"Locations",msg);
+      console.log("getting channel: " + channel);
+      publisher.publish(ownType + "Locations", msg);
     }
 
     //this function updates the channels tuned into
@@ -230,10 +259,14 @@ export class GenericServer2 {
           ownType
         );
         for (const iterator of toModify) {
-          if(distributionChannels.has(iterator)){
-            distributionChannels.get(iterator)?.set(connObj.taxiId,{ip:connObj.dgramAddress,port:connObj.dgramPort});
+          if (distributionChannels.has(iterator)) {
+            distributionChannels
+              .get(iterator)
+              ?.set(connObj.taxiId, {
+                ip: connObj.dgramAddress,
+                port: connObj.dgramPort,
+              });
           }
-         
         }
       } else {
         //this is for when the user moves and wishes to be subscribed to new (hexagon)channels and unsusbscribes from others
@@ -250,17 +283,22 @@ export class GenericServer2 {
         );
 
         for (const iterator of toRemove) {
-          if(distributionChannels.has(iterator)){
+          if (distributionChannels.has(iterator)) {
             distributionChannels.get(iterator)?.delete(connObj.taxiId);
           }
         }
 
         for (const iterator of toAdd) {
           console.log(iterator);
-          if(!distributionChannels.has(iterator)){
-            distributionChannels.set(iterator,new Map())
+          if (!distributionChannels.has(iterator)) {
+            distributionChannels.set(iterator, new Map());
           }
-          distributionChannels.get(iterator)?.set(connObj.taxiId,{ip:connObj.dgramAddress,port:connObj.dgramPort});
+          distributionChannels
+            .get(iterator)
+            ?.set(connObj.taxiId, {
+              ip: connObj.dgramAddress,
+              port: connObj.dgramPort,
+            });
         }
       }
       connObj.setReceptionChannels(newChannels);

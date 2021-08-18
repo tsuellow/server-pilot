@@ -15,6 +15,7 @@
   "dependencies": {
     "@types/ip": "^1.1.0",
     "@types/os-utils": "0.0.1",
+    "axios": "^0.21.1",
     "os-utils": "0.0.14",
     "public-ip": "^4.0.4",
     "redis": "^3.1.1",

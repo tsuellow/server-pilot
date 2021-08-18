@@ -51,10 +51,11 @@ var driverServer;
 var externalAddress;
 var internalAddress;
 var deathWish = false;
-//replace with parameter added at 'node index.js #redisaddress' execution
-var redisAddress = "redis://redisserver.3uqrcc.0001.use1.cache.amazonaws.com:6379";
-var redisConn = redis_1.default.createClient(redisAddress);
-var redisSubscriber = redis_1.default.createClient(redisAddress);
+//this is a centralized redis address used for spot instance control exclucively
+var redisAddress = '172.31.31.174';
+var locRedisAddress = '';
+var redisConn = redis_1.default.createClient(6379, redisAddress, { auth_pass: 'contrasena1234' });
+var redisSubscriber = redis_1.default.createClient(6379, redisAddress, { auth_pass: 'contrasena1234' }); //subscribe to your own private channel
 prepareServer();
 var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
     var value;
@@ -73,7 +74,10 @@ var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0
 }); }, 15000);
 redisSubscriber.on("message", function (chnl, msg) {
     if (msg == 'KILL YOURSELF') {
-        //slowlyKillBothServers();
+        slowlyKillBothServers(true);
+    }
+    if (chnl == 'redisUpdates') {
+        console.log('redis shut down and restarted');
     }
 });
 //get public i, get private ip, register on redis and start server
@@ -84,18 +88,20 @@ function prepareServer() {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 4, , 5]);
-                    return [4 /*yield*/, public_ip_1.default.v4()];
+                    return [4 /*yield*/, promisifiedGet('redisIp')];
                 case 1:
-                    externalAddress = _a.sent();
-                    return [4 /*yield*/, ip_1.default.address()];
+                    locRedisAddress = _a.sent();
+                    return [4 /*yield*/, public_ip_1.default.v4()];
                 case 2:
-                    internalAddress = _a.sent();
+                    externalAddress = _a.sent();
+                    internalAddress = ip_1.default.address();
                     startBothServers(internalAddress);
                     return [4 /*yield*/, getCpuFreePlusTime()];
                 case 3:
                     value = _a.sent();
                     redisConn.hset("genericServers", externalAddress, value);
                     redisSubscriber.subscribe(externalAddress);
+                    redisSubscriber.subscribe("locRedisAddress");
                     return [3 /*break*/, 5];
                 case 4:
                     error_1 = _a.sent();
@@ -129,8 +135,9 @@ function getCpuFreePromise() {
     });
 }
 function startBothServers(ownIp) {
-    clientServer = new GenericServer2_1.GenericServer2("client", "driver", 3000, 33333, ownIp, redisAddress);
-    driverServer = new GenericServer2_1.GenericServer2("driver", "client", 4000, 44444, ownIp, redisAddress);
+    console.log('connecting to redis: ' + locRedisAddress);
+    clientServer = new GenericServer2_1.GenericServer2("client", "driver", 3000, 33333, ownIp, locRedisAddress);
+    driverServer = new GenericServer2_1.GenericServer2("driver", "client", 4000, 44444, ownIp, locRedisAddress);
     clientServer.startServer();
     driverServer.startServer();
 }
@@ -139,6 +146,17 @@ function slowlyKillBothServers(trigger) {
     if (trigger) {
         redisConn.hdel("genericServers", externalAddress);
     }
-    clientServer.deathwish = trigger;
-    driverServer.deathwish = trigger;
+    clientServer.setDeathWish(trigger);
+    driverServer.setDeathWish(trigger);
+}
+function promisifiedGet(key) {
+    return new Promise(function (resolve, reject) {
+        redisConn.get(key, function (err, reply) {
+            if (err) {
+                reject(err);
+            }
+            if (reply != null)
+                resolve(reply);
+        });
+    });
 }

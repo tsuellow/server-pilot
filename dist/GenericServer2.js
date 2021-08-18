@@ -46,6 +46,9 @@ var GenericServer2 = /** @class */ (function () {
         this.redisEndpoint = redisEndpoint;
         this.deathwish = false;
     }
+    GenericServer2.prototype.setDeathWish = function (trigger) {
+        this.deathwish = trigger;
+    };
     GenericServer2.prototype.startServer = function () {
         var _this = this;
         var ownType = this.ownType;
@@ -65,7 +68,10 @@ var GenericServer2 = /** @class */ (function () {
                     if (new Date().getTime() - value.timestamp > 120000) {
                         updateOwnChannels(value, []);
                         value.ws.close();
-                        console.log("deletion of taxiId: " + value.taxiId + " being performed due to caducation on list of size: " + connectionList.size);
+                        console.log("deletion of taxiId: " +
+                            value.taxiId +
+                            " being performed due to caducation on list of size: " +
+                            connectionList.size);
                         connectionList.delete(key);
                         console.log("new size: " + connectionList.size);
                     }
@@ -86,8 +92,7 @@ var GenericServer2 = /** @class */ (function () {
         });
         var udpSocket = dgram_1.default.createSocket("udp4");
         udpSocket.bind(this.udpPort, this.ownIp);
-        var otherUdp = dgram_1.default.createSocket("udp4");
-        wsServer.on("listening", function (server) {
+        wsServer.on("listening", function (_server) {
             console.log(ownType + " server is listening on port " + _this.wsPort);
         });
         wsServer.on("connection", function (ws) {
@@ -120,7 +125,9 @@ var GenericServer2 = /** @class */ (function () {
                             if (_this.deathwish && Math.random() <= 0.01) {
                                 updateOwnChannels(existingConn, []);
                                 ws.close(1006, "shutting down server");
-                                console.log("deletion of taxiId: " + jsonMsg.taxiId + " being performed due to slow suicide procedure");
+                                console.log("deletion of taxiId: " +
+                                    jsonMsg.taxiId +
+                                    " being performed due to slow suicide procedure");
                                 connectionList.delete(jsonMsg.taxiId);
                             }
                             else {
@@ -147,7 +154,12 @@ var GenericServer2 = /** @class */ (function () {
                         if (ws == value.ws) {
                             var conn = connectionList.get(key);
                             //@ts-ignore
-                            console.log("disconnecting taxiId: " + (conn === null || conn === void 0 ? void 0 : conn.taxiId) + " code:" + code + " reason:" + reason);
+                            console.log("disconnecting taxiId: " +
+                                (conn === null || conn === void 0 ? void 0 : conn.taxiId) +
+                                " code:" +
+                                code +
+                                " reason:" +
+                                reason);
                             if (code == 1006) {
                                 try {
                                     var latestMsg = JSON.parse(value.latestMsg);
@@ -225,7 +237,7 @@ var GenericServer2 = /** @class */ (function () {
                     var response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
                     console.log(response);
                     connObj === null || connObj === void 0 ? void 0 : connObj.ws.send(JSON.stringify(response));
-                    udpSocket.send("testMsj", remote.port, remote.address);
+                    udpSocket.send("udp hole successfully punched", remote.port, remote.address); //see if this arrives successfully at android
                 }
                 catch (_a) {
                     console.warn("failed to process incomming UDP datagram");
@@ -255,7 +267,11 @@ var GenericServer2 = /** @class */ (function () {
                     for (var toModify_1 = __values(toModify), toModify_1_1 = toModify_1.next(); !toModify_1_1.done; toModify_1_1 = toModify_1.next()) {
                         var iterator = toModify_1_1.value;
                         if (distributionChannels.has(iterator)) {
-                            (_d = distributionChannels.get(iterator)) === null || _d === void 0 ? void 0 : _d.set(connObj.taxiId, { ip: connObj.dgramAddress, port: connObj.dgramPort });
+                            (_d = distributionChannels
+                                .get(iterator)) === null || _d === void 0 ? void 0 : _d.set(connObj.taxiId, {
+                                ip: connObj.dgramAddress,
+                                port: connObj.dgramPort,
+                            });
                         }
                     }
                 }
@@ -294,7 +310,11 @@ var GenericServer2 = /** @class */ (function () {
                         if (!distributionChannels.has(iterator)) {
                             distributionChannels.set(iterator, new Map());
                         }
-                        (_f = distributionChannels.get(iterator)) === null || _f === void 0 ? void 0 : _f.set(connObj.taxiId, { ip: connObj.dgramAddress, port: connObj.dgramPort });
+                        (_f = distributionChannels
+                            .get(iterator)) === null || _f === void 0 ? void 0 : _f.set(connObj.taxiId, {
+                            ip: connObj.dgramAddress,
+                            port: connObj.dgramPort,
+                        });
                     }
                 }
                 catch (e_7_1) { e_7 = { error: e_7_1 }; }
