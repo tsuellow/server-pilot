@@ -20,7 +20,10 @@ interface UdpConn {
 
 export class GenericServer2 {
   private deathwish: boolean = false;
-
+  private subscriber: redis.RedisClient; 
+  private publisher: redis.RedisClient;
+  private distributionChannels: Map<string, Map<number, UdpConn>> = new Map();
+  private udpSocket: dgram.Socket = dgram.createSocket("udp4");
   constructor(
     public ownType: string,
     public targetType: string,
@@ -28,10 +31,40 @@ export class GenericServer2 {
     public udpPort: number,
     public ownIp: string,
     public redisEndpoint: string
-  ) {}
+  ) {
+    this.subscriber= redis.createClient('rediss://'+redisEndpoint+':6379');
+    this.publisher= redis.createClient('rediss://'+redisEndpoint+':6379');
+    this.subscriber.subscribe(targetType + "Locations");
+  }
 
   public setDeathWish(trigger: boolean) {
     this.deathwish = trigger;
+  }
+
+  public resetRedis(endpoint:string){
+    //redis client to get counterpart msgs. this is to be executed everytime redis changes
+    this.subscriber= redis.createClient('rediss://'+endpoint+':6379');
+    this.publisher= redis.createClient('rediss://'+endpoint+':6379');
+    this.subscriber.subscribe(this.targetType + "Locations");
+
+    this.subscriber.on("message",  (chnl, message) => {
+      console.log("subscription received: " + message);
+      let jsonMsg: JsonMsg = JSON.parse(message);
+      for (const channel of jsonMsg.targetChannels) {
+        const chName: string = getSingleChannelName(
+          channel,
+          jsonMsg.city,
+          this.ownType
+        );
+        const list = this.distributionChannels.get(chName);
+        if (list) {
+          for (let value of list.values()) {
+            console.log(value.ip + "::::" + value.port);
+            this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+          }
+        }
+      }
+    });
   }
 
   startServer(): void {
@@ -39,9 +72,9 @@ export class GenericServer2 {
     const targetType: string = this.targetType;
 
     //redis client to get datagram recipients ...we will need to pass the redis url later on
-    const subscriber: redis.RedisClient = redis.createClient('rediss://'+this.redisEndpoint+':6379');
-    const publisher: redis.RedisClient = redis.createClient('rediss://'+this.redisEndpoint+':6379');
-    subscriber.subscribe(targetType + "Locations");
+    // const subscriber: redis.RedisClient = redis.createClient('rediss://'+this.redisEndpoint+':6379');
+    // const publisher: redis.RedisClient = redis.createClient('rediss://'+this.redisEndpoint+':6379');
+    // subscriber.subscribe(targetType + "Locations");
 
     //list of all connected users
     const connectionList: Map<number, ConnectionObject> = new Map();
@@ -66,14 +99,14 @@ export class GenericServer2 {
     }, 60000);
 
     //channel infrastructure
-    const distributionChannels: Map<string, Map<number, UdpConn>> = new Map();
+    // const distributionChannels: Map<string, Map<number, UdpConn>> = new Map();
 
     const wsServer: WebSocket.Server = new WebSocket.Server({
       port: this.wsPort,
     });
 
-    const udpSocket: dgram.Socket = dgram.createSocket("udp4");
-    udpSocket.bind(this.udpPort, this.ownIp);
+    // const udpSocket: dgram.Socket = dgram.createSocket("udp4");
+    this.udpSocket.bind(this.udpPort, this.ownIp);
 
     wsServer.on("listening", (_server: WebSocket.Server) => {
       console.log(ownType + " server is listening on port " + this.wsPort);
@@ -185,7 +218,7 @@ export class GenericServer2 {
       });
     });
 
-    subscriber.on("message", function (chnl, message) {
+    this.subscriber.on("message",  (chnl, message) => {
       console.log("subscription received: " + message);
       let jsonMsg: JsonMsg = JSON.parse(message);
       for (const channel of jsonMsg.targetChannels) {
@@ -194,17 +227,17 @@ export class GenericServer2 {
           jsonMsg.city,
           ownType
         );
-        const list = distributionChannels.get(chName);
+        const list = this.distributionChannels.get(chName);
         if (list) {
           for (let value of list.values()) {
             console.log(value.ip + "::::" + value.port);
-            udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+            this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
           }
         }
       }
     });
 
-    udpSocket.on("message", function (message, remote) {
+    this.udpSocket.on("message",  (message, remote) => {
       console.log(remote.address + ":" + remote.port + " - " + message);
       const jsonMsg = JSON.parse(message.toString());
       const taxiId: number = jsonMsg.taxiId;
@@ -219,7 +252,7 @@ export class GenericServer2 {
           const response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
           console.log(response);
           connObj?.ws.send(JSON.stringify(response));
-          udpSocket.send(
+          this.udpSocket.send(
             "udp hole successfully punched",
             remote.port,
             remote.address
@@ -237,17 +270,17 @@ export class GenericServer2 {
     }
 
     //this function sends my location to all parties in the channel delivery group
-    function sendOwnLocationOut(channel: string, msg: string): void {
+    const sendOwnLocationOut = (channel: string, msg: string): void => {
       console.log("getting channel: " + channel);
-      publisher.publish(ownType + "Locations", msg);
+      this.publisher.publish(ownType + "Locations", msg);
     }
 
     //this function updates the channels tuned into
-    function updateOwnChannels(
+    const updateOwnChannels = (
       connObj: ConnectionObject,
       newChannels: number[],
       resetAll = false
-    ): void {
+    ): void => {
       if (resetAll) {
         //this is when the UDP IP or port changes while the ws connection persists
         //here we find all existing subscriptions and change the ip:port string to match the new one
@@ -257,8 +290,8 @@ export class GenericServer2 {
           ownType
         );
         for (const iterator of toModify) {
-          if (distributionChannels.has(iterator)) {
-            distributionChannels
+          if (this.distributionChannels.has(iterator)) {
+            this.distributionChannels
               .get(iterator)
               ?.set(connObj.taxiId, {
                 ip: connObj.dgramAddress,
@@ -281,17 +314,17 @@ export class GenericServer2 {
         );
 
         for (const iterator of toRemove) {
-          if (distributionChannels.has(iterator)) {
-            distributionChannels.get(iterator)?.delete(connObj.taxiId);
+          if (this.distributionChannels.has(iterator)) {
+            this.distributionChannels.get(iterator)?.delete(connObj.taxiId);
           }
         }
 
         for (const iterator of toAdd) {
           console.log(iterator);
-          if (!distributionChannels.has(iterator)) {
-            distributionChannels.set(iterator, new Map());
+          if (!this.distributionChannels.has(iterator)) {
+            this.distributionChannels.set(iterator, new Map());
           }
-          distributionChannels
+          this.distributionChannels
             .get(iterator)
             ?.set(connObj.taxiId, {
               ip: connObj.dgramAddress,

@@ -77,7 +77,8 @@ redisSubscriber.on("message", function (chnl, msg) {
         slowlyKillBothServers(true);
     }
     if (chnl == 'redisUpdates') {
-        console.log('redis shut down and restarted');
+        clientServer.resetRedis(msg);
+        driverServer.resetRedis(msg);
     }
 });
 //get public i, get private ip, register on redis and start server

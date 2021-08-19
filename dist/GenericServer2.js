@@ -45,23 +45,70 @@ var GenericServer2 = /** @class */ (function () {
         this.ownIp = ownIp;
         this.redisEndpoint = redisEndpoint;
         this.deathwish = false;
+        this.distributionChannels = new Map();
+        this.udpSocket = dgram_1.default.createSocket("udp4");
+        this.subscriber = redis_1.default.createClient('rediss://' + redisEndpoint + ':6379');
+        this.publisher = redis_1.default.createClient('rediss://' + redisEndpoint + ':6379');
+        this.subscriber.subscribe(targetType + "Locations");
     }
     GenericServer2.prototype.setDeathWish = function (trigger) {
         this.deathwish = trigger;
+    };
+    GenericServer2.prototype.resetRedis = function (endpoint) {
+        var _this = this;
+        //redis client to get counterpart msgs. this is to be executed everytime redis changes
+        this.subscriber = redis_1.default.createClient('rediss://' + endpoint + ':6379');
+        this.publisher = redis_1.default.createClient('rediss://' + endpoint + ':6379');
+        this.subscriber.subscribe(this.targetType + "Locations");
+        this.subscriber.on("message", function (chnl, message) {
+            var e_1, _a, e_2, _b;
+            console.log("subscription received: " + message);
+            var jsonMsg = JSON.parse(message);
+            try {
+                for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var channel = _d.value;
+                    var chName = utils_1.getSingleChannelName(channel, jsonMsg.city, _this.ownType);
+                    var list = _this.distributionChannels.get(chName);
+                    if (list) {
+                        try {
+                            for (var _e = (e_2 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
+                                var value = _f.value;
+                                console.log(value.ip + "::::" + value.port);
+                                _this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+                            }
+                        }
+                        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                        finally {
+                            try {
+                                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
+                            }
+                            finally { if (e_2) throw e_2.error; }
+                        }
+                    }
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+        });
     };
     GenericServer2.prototype.startServer = function () {
         var _this = this;
         var ownType = this.ownType;
         var targetType = this.targetType;
         //redis client to get datagram recipients ...we will need to pass the redis url later on
-        var subscriber = redis_1.default.createClient('rediss://' + this.redisEndpoint + ':6379');
-        var publisher = redis_1.default.createClient('rediss://' + this.redisEndpoint + ':6379');
-        subscriber.subscribe(targetType + "Locations");
+        // const subscriber: redis.RedisClient = redis.createClient('rediss://'+this.redisEndpoint+':6379');
+        // const publisher: redis.RedisClient = redis.createClient('rediss://'+this.redisEndpoint+':6379');
+        // subscriber.subscribe(targetType + "Locations");
         //list of all connected users
         var connectionList = new Map();
         //periodically close inactive connections
         var interval = setInterval(function () {
-            var e_1, _a;
+            var e_3, _a;
             try {
                 for (var connectionList_1 = __values(connectionList), connectionList_1_1 = connectionList_1.next(); !connectionList_1_1.done; connectionList_1_1 = connectionList_1.next()) {
                     var _b = __read(connectionList_1_1.value, 2), key = _b[0], value = _b[1];
@@ -77,21 +124,21 @@ var GenericServer2 = /** @class */ (function () {
                     }
                 }
             }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            catch (e_3_1) { e_3 = { error: e_3_1 }; }
             finally {
                 try {
                     if (connectionList_1_1 && !connectionList_1_1.done && (_a = connectionList_1.return)) _a.call(connectionList_1);
                 }
-                finally { if (e_1) throw e_1.error; }
+                finally { if (e_3) throw e_3.error; }
             }
         }, 60000);
         //channel infrastructure
-        var distributionChannels = new Map();
+        // const distributionChannels: Map<string, Map<number, UdpConn>> = new Map();
         var wsServer = new ws_1.default.Server({
             port: this.wsPort,
         });
-        var udpSocket = dgram_1.default.createSocket("udp4");
-        udpSocket.bind(this.udpPort, this.ownIp);
+        // const udpSocket: dgram.Socket = dgram.createSocket("udp4");
+        this.udpSocket.bind(this.udpPort, this.ownIp);
         wsServer.on("listening", function (_server) {
             console.log(ownType + " server is listening on port " + _this.wsPort);
         });
@@ -147,7 +194,7 @@ var GenericServer2 = /** @class */ (function () {
             });
             //when connection is ended the client is first removed from the delivery group
             ws.on("close", function (code, reason) {
-                var e_2, _a;
+                var e_4, _a;
                 try {
                     for (var connectionList_2 = __values(connectionList), connectionList_2_1 = connectionList_2.next(); !connectionList_2_1.done; connectionList_2_1 = connectionList_2.next()) {
                         var _b = __read(connectionList_2_1.value, 2), key = _b[0], value = _b[1];
@@ -178,51 +225,51 @@ var GenericServer2 = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                catch (e_4_1) { e_4 = { error: e_4_1 }; }
                 finally {
                     try {
                         if (connectionList_2_1 && !connectionList_2_1.done && (_a = connectionList_2.return)) _a.call(connectionList_2);
                     }
-                    finally { if (e_2) throw e_2.error; }
+                    finally { if (e_4) throw e_4.error; }
                 }
             });
         });
-        subscriber.on("message", function (chnl, message) {
-            var e_3, _a, e_4, _b;
+        this.subscriber.on("message", function (chnl, message) {
+            var e_5, _a, e_6, _b;
             console.log("subscription received: " + message);
             var jsonMsg = JSON.parse(message);
             try {
                 for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
                     var channel = _d.value;
                     var chName = utils_1.getSingleChannelName(channel, jsonMsg.city, ownType);
-                    var list = distributionChannels.get(chName);
+                    var list = _this.distributionChannels.get(chName);
                     if (list) {
                         try {
-                            for (var _e = (e_4 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
+                            for (var _e = (e_6 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
                                 var value = _f.value;
                                 console.log(value.ip + "::::" + value.port);
-                                udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+                                _this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
                             }
                         }
-                        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                        catch (e_6_1) { e_6 = { error: e_6_1 }; }
                         finally {
                             try {
                                 if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
                             }
-                            finally { if (e_4) throw e_4.error; }
+                            finally { if (e_6) throw e_6.error; }
                         }
                     }
                 }
             }
-            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            catch (e_5_1) { e_5 = { error: e_5_1 }; }
             finally {
                 try {
                     if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
-                finally { if (e_3) throw e_3.error; }
+                finally { if (e_5) throw e_5.error; }
             }
         });
-        udpSocket.on("message", function (message, remote) {
+        this.udpSocket.on("message", function (message, remote) {
             console.log(remote.address + ":" + remote.port + " - " + message);
             var jsonMsg = JSON.parse(message.toString());
             var taxiId = jsonMsg.taxiId;
@@ -237,7 +284,7 @@ var GenericServer2 = /** @class */ (function () {
                     var response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
                     console.log(response);
                     connObj === null || connObj === void 0 ? void 0 : connObj.ws.send(JSON.stringify(response));
-                    udpSocket.send("udp hole successfully punched", remote.port, remote.address); //see if this arrives successfully at android
+                    _this.udpSocket.send("udp hole successfully punched", remote.port, remote.address); //see if this arrives successfully at android
                 }
                 catch (_a) {
                     console.warn("failed to process incomming UDP datagram");
@@ -250,13 +297,13 @@ var GenericServer2 = /** @class */ (function () {
             return lastMsg;
         }
         //this function sends my location to all parties in the channel delivery group
-        function sendOwnLocationOut(channel, msg) {
+        var sendOwnLocationOut = function (channel, msg) {
             console.log("getting channel: " + channel);
-            publisher.publish(ownType + "Locations", msg);
-        }
+            _this.publisher.publish(ownType + "Locations", msg);
+        };
         //this function updates the channels tuned into
-        function updateOwnChannels(connObj, newChannels, resetAll) {
-            var e_5, _a, e_6, _b, e_7, _c;
+        var updateOwnChannels = function (connObj, newChannels, resetAll) {
+            var e_7, _a, e_8, _b, e_9, _c;
             var _d, _e, _f;
             if (resetAll === void 0) { resetAll = false; }
             if (resetAll) {
@@ -266,8 +313,8 @@ var GenericServer2 = /** @class */ (function () {
                 try {
                     for (var toModify_1 = __values(toModify), toModify_1_1 = toModify_1.next(); !toModify_1_1.done; toModify_1_1 = toModify_1.next()) {
                         var iterator = toModify_1_1.value;
-                        if (distributionChannels.has(iterator)) {
-                            (_d = distributionChannels
+                        if (_this.distributionChannels.has(iterator)) {
+                            (_d = _this.distributionChannels
                                 .get(iterator)) === null || _d === void 0 ? void 0 : _d.set(connObj.taxiId, {
                                 ip: connObj.dgramAddress,
                                 port: connObj.dgramPort,
@@ -275,12 +322,12 @@ var GenericServer2 = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                catch (e_7_1) { e_7 = { error: e_7_1 }; }
                 finally {
                     try {
                         if (toModify_1_1 && !toModify_1_1.done && (_a = toModify_1.return)) _a.call(toModify_1);
                     }
-                    finally { if (e_5) throw e_5.error; }
+                    finally { if (e_7) throw e_7.error; }
                 }
             }
             else {
@@ -291,42 +338,42 @@ var GenericServer2 = /** @class */ (function () {
                 try {
                     for (var toRemove_1 = __values(toRemove), toRemove_1_1 = toRemove_1.next(); !toRemove_1_1.done; toRemove_1_1 = toRemove_1.next()) {
                         var iterator = toRemove_1_1.value;
-                        if (distributionChannels.has(iterator)) {
-                            (_e = distributionChannels.get(iterator)) === null || _e === void 0 ? void 0 : _e.delete(connObj.taxiId);
+                        if (_this.distributionChannels.has(iterator)) {
+                            (_e = _this.distributionChannels.get(iterator)) === null || _e === void 0 ? void 0 : _e.delete(connObj.taxiId);
                         }
                     }
                 }
-                catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                catch (e_8_1) { e_8 = { error: e_8_1 }; }
                 finally {
                     try {
                         if (toRemove_1_1 && !toRemove_1_1.done && (_b = toRemove_1.return)) _b.call(toRemove_1);
                     }
-                    finally { if (e_6) throw e_6.error; }
+                    finally { if (e_8) throw e_8.error; }
                 }
                 try {
                     for (var toAdd_1 = __values(toAdd), toAdd_1_1 = toAdd_1.next(); !toAdd_1_1.done; toAdd_1_1 = toAdd_1.next()) {
                         var iterator = toAdd_1_1.value;
                         console.log(iterator);
-                        if (!distributionChannels.has(iterator)) {
-                            distributionChannels.set(iterator, new Map());
+                        if (!_this.distributionChannels.has(iterator)) {
+                            _this.distributionChannels.set(iterator, new Map());
                         }
-                        (_f = distributionChannels
+                        (_f = _this.distributionChannels
                             .get(iterator)) === null || _f === void 0 ? void 0 : _f.set(connObj.taxiId, {
                             ip: connObj.dgramAddress,
                             port: connObj.dgramPort,
                         });
                     }
                 }
-                catch (e_7_1) { e_7 = { error: e_7_1 }; }
+                catch (e_9_1) { e_9 = { error: e_9_1 }; }
                 finally {
                     try {
                         if (toAdd_1_1 && !toAdd_1_1.done && (_c = toAdd_1.return)) _c.call(toAdd_1);
                     }
-                    finally { if (e_7) throw e_7.error; }
+                    finally { if (e_9) throw e_9.error; }
                 }
             }
             connObj.setReceptionChannels(newChannels);
-        }
+        };
     };
     return GenericServer2;
 }());

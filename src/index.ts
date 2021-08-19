@@ -35,7 +35,8 @@ redisSubscriber.on("message",(chnl:string,msg:string)=>{
     slowlyKillBothServers(true);
   }
   if(chnl=='redisUpdates'){
-    console.log('redis shut down and restarted')
+    clientServer.resetRedis(msg);
+    driverServer.resetRedis(msg);
   }
 })
 
