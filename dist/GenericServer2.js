@@ -38,6 +38,7 @@ var ConnectionObject_1 = require("./models/ConnectionObject");
 var utils_1 = require("./models/utils");
 var GenericServer2 = /** @class */ (function () {
     function GenericServer2(ownType, targetType, wsPort, udpPort, ownIp, redisEndpoint) {
+        var _this = this;
         this.ownType = ownType;
         this.targetType = targetType;
         this.wsPort = wsPort;
@@ -47,19 +48,9 @@ var GenericServer2 = /** @class */ (function () {
         this.deathwish = false;
         this.distributionChannels = new Map();
         this.udpSocket = dgram_1.default.createSocket("udp4");
-        this.subscriber = redis_1.default.createClient('rediss://' + redisEndpoint + ':6379');
-        this.publisher = redis_1.default.createClient('rediss://' + redisEndpoint + ':6379');
+        this.subscriber = redis_1.default.createClient(6379, redisEndpoint);
+        this.publisher = redis_1.default.createClient(6379, redisEndpoint);
         this.subscriber.subscribe(targetType + "Locations");
-    }
-    GenericServer2.prototype.setDeathWish = function (trigger) {
-        this.deathwish = trigger;
-    };
-    GenericServer2.prototype.resetRedis = function (endpoint) {
-        var _this = this;
-        //redis client to get counterpart msgs. this is to be executed everytime redis changes
-        this.subscriber = redis_1.default.createClient('rediss://' + endpoint + ':6379');
-        this.publisher = redis_1.default.createClient('rediss://' + endpoint + ':6379');
-        this.subscriber.subscribe(this.targetType + "Locations");
         this.subscriber.on("message", function (chnl, message) {
             var e_1, _a, e_2, _b;
             console.log("subscription received: " + message);
@@ -95,6 +86,51 @@ var GenericServer2 = /** @class */ (function () {
                 finally { if (e_1) throw e_1.error; }
             }
         });
+    }
+    GenericServer2.prototype.setDeathWish = function (trigger) {
+        this.deathwish = trigger;
+    };
+    GenericServer2.prototype.resetRedis = function (endpoint) {
+        var _this = this;
+        //redis client to get counterpart msgs. this is to be executed everytime redis changes
+        this.subscriber = redis_1.default.createClient(6379, endpoint);
+        this.publisher = redis_1.default.createClient(6379, endpoint);
+        this.subscriber.subscribe(this.targetType + "Locations");
+        this.subscriber.on("message", function (chnl, message) {
+            var e_3, _a, e_4, _b;
+            console.log("subscription received: " + message);
+            var jsonMsg = JSON.parse(message);
+            try {
+                for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var channel = _d.value;
+                    var chName = utils_1.getSingleChannelName(channel, jsonMsg.city, _this.ownType);
+                    var list = _this.distributionChannels.get(chName);
+                    if (list) {
+                        try {
+                            for (var _e = (e_4 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
+                                var value = _f.value;
+                                console.log(value.ip + "::::" + value.port);
+                                _this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+                            }
+                        }
+                        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                        finally {
+                            try {
+                                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
+                            }
+                            finally { if (e_4) throw e_4.error; }
+                        }
+                    }
+                }
+            }
+            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            finally {
+                try {
+                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+                }
+                finally { if (e_3) throw e_3.error; }
+            }
+        });
     };
     GenericServer2.prototype.startServer = function () {
         var _this = this;
@@ -108,7 +144,7 @@ var GenericServer2 = /** @class */ (function () {
         var connectionList = new Map();
         //periodically close inactive connections
         var interval = setInterval(function () {
-            var e_3, _a;
+            var e_5, _a;
             try {
                 for (var connectionList_1 = __values(connectionList), connectionList_1_1 = connectionList_1.next(); !connectionList_1_1.done; connectionList_1_1 = connectionList_1.next()) {
                     var _b = __read(connectionList_1_1.value, 2), key = _b[0], value = _b[1];
@@ -124,12 +160,12 @@ var GenericServer2 = /** @class */ (function () {
                     }
                 }
             }
-            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            catch (e_5_1) { e_5 = { error: e_5_1 }; }
             finally {
                 try {
                     if (connectionList_1_1 && !connectionList_1_1.done && (_a = connectionList_1.return)) _a.call(connectionList_1);
                 }
-                finally { if (e_3) throw e_3.error; }
+                finally { if (e_5) throw e_5.error; }
             }
         }, 60000);
         //channel infrastructure
@@ -194,7 +230,7 @@ var GenericServer2 = /** @class */ (function () {
             });
             //when connection is ended the client is first removed from the delivery group
             ws.on("close", function (code, reason) {
-                var e_4, _a;
+                var e_6, _a;
                 try {
                     for (var connectionList_2 = __values(connectionList), connectionList_2_1 = connectionList_2.next(); !connectionList_2_1.done; connectionList_2_1 = connectionList_2.next()) {
                         var _b = __read(connectionList_2_1.value, 2), key = _b[0], value = _b[1];
@@ -225,50 +261,33 @@ var GenericServer2 = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                catch (e_6_1) { e_6 = { error: e_6_1 }; }
                 finally {
                     try {
                         if (connectionList_2_1 && !connectionList_2_1.done && (_a = connectionList_2.return)) _a.call(connectionList_2);
                     }
-                    finally { if (e_4) throw e_4.error; }
+                    finally { if (e_6) throw e_6.error; }
                 }
             });
         });
-        this.subscriber.on("message", function (chnl, message) {
-            var e_5, _a, e_6, _b;
-            console.log("subscription received: " + message);
-            var jsonMsg = JSON.parse(message);
-            try {
-                for (var _c = __values(jsonMsg.targetChannels), _d = _c.next(); !_d.done; _d = _c.next()) {
-                    var channel = _d.value;
-                    var chName = utils_1.getSingleChannelName(channel, jsonMsg.city, ownType);
-                    var list = _this.distributionChannels.get(chName);
-                    if (list) {
-                        try {
-                            for (var _e = (e_6 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
-                                var value = _f.value;
-                                console.log(value.ip + "::::" + value.port);
-                                _this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
-                            }
-                        }
-                        catch (e_6_1) { e_6 = { error: e_6_1 }; }
-                        finally {
-                            try {
-                                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
-                            }
-                            finally { if (e_6) throw e_6.error; }
-                        }
-                    }
-                }
-            }
-            catch (e_5_1) { e_5 = { error: e_5_1 }; }
-            finally {
-                try {
-                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-                }
-                finally { if (e_5) throw e_5.error; }
-            }
-        });
+        // this.subscriber.on("message",  (chnl, message) => {
+        //   console.log("subscription received: " + message);
+        //   let jsonMsg: JsonMsg = JSON.parse(message);
+        //   for (const channel of jsonMsg.targetChannels) {
+        //     const chName: string = getSingleChannelName(
+        //       channel,
+        //       jsonMsg.city,
+        //       ownType
+        //     );
+        //     const list = this.distributionChannels.get(chName);
+        //     if (list) {
+        //       for (let value of list.values()) {
+        //         console.log(value.ip + "::::" + value.port);
+        //         this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+        //       }
+        //     }
+        //   }
+        // });
         this.udpSocket.on("message", function (message, remote) {
             console.log(remote.address + ":" + remote.port + " - " + message);
             var jsonMsg = JSON.parse(message.toString());

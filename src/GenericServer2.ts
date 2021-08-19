@@ -32,9 +32,28 @@ export class GenericServer2 {
     public ownIp: string,
     public redisEndpoint: string
   ) {
-    this.subscriber= redis.createClient('rediss://'+redisEndpoint+':6379');
-    this.publisher= redis.createClient('rediss://'+redisEndpoint+':6379');
+    this.subscriber= redis.createClient(6379,redisEndpoint);
+    this.publisher= redis.createClient(6379,redisEndpoint);
     this.subscriber.subscribe(targetType + "Locations");
+
+    this.subscriber.on("message",  (chnl, message) => {
+      console.log("subscription received: " + message);
+      let jsonMsg: JsonMsg = JSON.parse(message);
+      for (const channel of jsonMsg.targetChannels) {
+        const chName: string = getSingleChannelName(
+          channel,
+          jsonMsg.city,
+          this.ownType
+        );
+        const list = this.distributionChannels.get(chName);
+        if (list) {
+          for (let value of list.values()) {
+            console.log(value.ip + "::::" + value.port);
+            this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+          }
+        }
+      }
+    });
   }
 
   public setDeathWish(trigger: boolean) {
@@ -43,8 +62,8 @@ export class GenericServer2 {
 
   public resetRedis(endpoint:string){
     //redis client to get counterpart msgs. this is to be executed everytime redis changes
-    this.subscriber= redis.createClient('rediss://'+endpoint+':6379');
-    this.publisher= redis.createClient('rediss://'+endpoint+':6379');
+    this.subscriber= redis.createClient(6379,endpoint);
+    this.publisher= redis.createClient(6379,endpoint);
     this.subscriber.subscribe(this.targetType + "Locations");
 
     this.subscriber.on("message",  (chnl, message) => {
@@ -218,24 +237,24 @@ export class GenericServer2 {
       });
     });
 
-    this.subscriber.on("message",  (chnl, message) => {
-      console.log("subscription received: " + message);
-      let jsonMsg: JsonMsg = JSON.parse(message);
-      for (const channel of jsonMsg.targetChannels) {
-        const chName: string = getSingleChannelName(
-          channel,
-          jsonMsg.city,
-          ownType
-        );
-        const list = this.distributionChannels.get(chName);
-        if (list) {
-          for (let value of list.values()) {
-            console.log(value.ip + "::::" + value.port);
-            this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
-          }
-        }
-      }
-    });
+    // this.subscriber.on("message",  (chnl, message) => {
+    //   console.log("subscription received: " + message);
+    //   let jsonMsg: JsonMsg = JSON.parse(message);
+    //   for (const channel of jsonMsg.targetChannels) {
+    //     const chName: string = getSingleChannelName(
+    //       channel,
+    //       jsonMsg.city,
+    //       ownType
+    //     );
+    //     const list = this.distributionChannels.get(chName);
+    //     if (list) {
+    //       for (let value of list.values()) {
+    //         console.log(value.ip + "::::" + value.port);
+    //         this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
+    //       }
+    //     }
+    //   }
+    // });
 
     this.udpSocket.on("message",  (message, remote) => {
       console.log(remote.address + ":" + remote.port + " - " + message);
