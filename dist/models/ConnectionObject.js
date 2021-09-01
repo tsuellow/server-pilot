@@ -26,7 +26,8 @@ var ConnectionObject = /** @class */ (function () {
         this.latestMsg = msg;
     };
     ConnectionObject.prototype.setReceptionChannels = function (reception) {
-        this.receptionChannels = reception;
+        console.log("reset channels got reached");
+        this.receptionChannels = reception.slice(0);
     };
     ConnectionObject.prototype.calculatePositiveDelta = function (incommingChannelIds) {
         var _this = this;
