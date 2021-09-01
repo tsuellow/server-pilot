@@ -399,8 +399,8 @@ var GenericServer2 = /** @class */ (function () {
                     }
                     finally { if (e_9) throw e_9.error; }
                 }
+                (_g = connectionList.get(connObj.taxiId)) === null || _g === void 0 ? void 0 : _g.setReceptionChannels(newChannels);
             }
-            (_g = connectionList.get(connObj.taxiId)) === null || _g === void 0 ? void 0 : _g.setReceptionChannels(newChannels);
             //connObj.setReceptionChannels(newChannels);
         };
     };

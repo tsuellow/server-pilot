@@ -359,8 +359,9 @@ export class GenericServer2 {
               port: connObj.dgramPort,
             });
         }
+        connectionList.get(connObj.taxiId)?.setReceptionChannels(newChannels);
       }
-      connectionList.get(connObj.taxiId)?.setReceptionChannels(newChannels);
+      
       //connObj.setReceptionChannels(newChannels);
     }
   }
