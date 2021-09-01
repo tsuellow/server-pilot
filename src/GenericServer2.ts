@@ -360,7 +360,8 @@ export class GenericServer2 {
             });
         }
       }
-      connObj.setReceptionChannels(newChannels);
+      connectionList.get(connObj.taxiId)?.setReceptionChannels(newChannels);
+      //connObj.setReceptionChannels(newChannels);
     }
   }
 }

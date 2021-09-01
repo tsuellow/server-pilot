@@ -328,7 +328,7 @@ var GenericServer2 = /** @class */ (function () {
         //this function updates the channels tuned into
         var updateOwnChannels = function (connObj, newChannels, resetAll) {
             var e_7, _a, e_8, _b, e_9, _c;
-            var _d, _e, _f;
+            var _d, _e, _f, _g;
             if (resetAll === void 0) { resetAll = false; }
             console.log('update channels beeing excecuted');
             if (resetAll) {
@@ -400,7 +400,8 @@ var GenericServer2 = /** @class */ (function () {
                     finally { if (e_9) throw e_9.error; }
                 }
             }
-            connObj.setReceptionChannels(newChannels);
+            (_g = connectionList.get(connObj.taxiId)) === null || _g === void 0 ? void 0 : _g.setReceptionChannels(newChannels);
+            //connObj.setReceptionChannels(newChannels);
         };
     };
     return GenericServer2;
