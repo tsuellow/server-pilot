@@ -61,17 +61,18 @@ var GenericServer2 = /** @class */ (function () {
                     var chName = utils_1.getSingleChannelName(channel, jsonMsg.city, _this.ownType);
                     var list = _this.distributionChannels.get(chName);
                     if (list) {
+                        console.log(chName);
                         try {
-                            for (var _e = (e_2 = void 0, __values(list.values())), _f = _e.next(); !_f.done; _f = _e.next()) {
-                                var value = _f.value;
-                                console.log(value.ip + "::::" + value.port);
+                            for (var list_1 = (e_2 = void 0, __values(list)), list_1_1 = list_1.next(); !list_1_1.done; list_1_1 = list_1.next()) {
+                                var _e = __read(list_1_1.value, 2), key = _e[0], value = _e[1];
+                                console.log('taxiId:' + key + ' ' + value.ip + "::::" + value.port);
                                 _this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
                             }
                         }
                         catch (e_2_1) { e_2 = { error: e_2_1 }; }
                         finally {
                             try {
-                                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
+                                if (list_1_1 && !list_1_1.done && (_b = list_1.return)) _b.call(list_1);
                             }
                             finally { if (e_2) throw e_2.error; }
                         }
@@ -358,6 +359,7 @@ var GenericServer2 = /** @class */ (function () {
                     for (var toRemove_1 = __values(toRemove), toRemove_1_1 = toRemove_1.next(); !toRemove_1_1.done; toRemove_1_1 = toRemove_1.next()) {
                         var iterator = toRemove_1_1.value;
                         if (_this.distributionChannels.has(iterator)) {
+                            console.log("removing", connObj.taxiId + " from " + iterator);
                             (_e = _this.distributionChannels.get(iterator)) === null || _e === void 0 ? void 0 : _e.delete(connObj.taxiId);
                         }
                     }
@@ -372,7 +374,7 @@ var GenericServer2 = /** @class */ (function () {
                 try {
                     for (var toAdd_1 = __values(toAdd), toAdd_1_1 = toAdd_1.next(); !toAdd_1_1.done; toAdd_1_1 = toAdd_1.next()) {
                         var iterator = toAdd_1_1.value;
-                        console.log(iterator);
+                        console.log("adding", connObj.taxiId + " to " + iterator);
                         if (!_this.distributionChannels.has(iterator)) {
                             _this.distributionChannels.set(iterator, new Map());
                         }

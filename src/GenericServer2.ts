@@ -47,8 +47,9 @@ export class GenericServer2 {
         );
         const list = this.distributionChannels.get(chName);
         if (list) {
-          for (let value of list.values()) {
-            console.log(value.ip + "::::" + value.port);
+          console.log(chName);
+          for (let [key, value] of list) {
+            console.log('taxiId:'+key+' '+value.ip + "::::" + value.port);
             this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
           }
         }
@@ -334,12 +335,13 @@ export class GenericServer2 {
 
         for (const iterator of toRemove) {
           if (this.distributionChannels.has(iterator)) {
+            console.log("removing",connObj.taxiId+" from "+iterator);
             this.distributionChannels.get(iterator)?.delete(connObj.taxiId);
           }
         }
 
         for (const iterator of toAdd) {
-          console.log(iterator);
+          console.log("adding",connObj.taxiId+" to "+iterator);
           if (!this.distributionChannels.has(iterator)) {
             this.distributionChannels.set(iterator, new Map());
           }
