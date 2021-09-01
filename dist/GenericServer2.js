@@ -255,10 +255,14 @@ var GenericServer2 = /** @class */ (function () {
                                     console.log("failed to send closing msg");
                                 }
                             }
-                            updateOwnChannels(conn, []);
-                            connectionList.delete(key);
-                            console.log("new size: " + connectionList.size);
-                            return;
+                            try {
+                                updateOwnChannels(conn, []);
+                            }
+                            finally {
+                                connectionList.delete(key);
+                                console.log("new size: " + connectionList.size);
+                                return;
+                            }
                         }
                     }
                 }
@@ -326,6 +330,7 @@ var GenericServer2 = /** @class */ (function () {
             var e_7, _a, e_8, _b, e_9, _c;
             var _d, _e, _f;
             if (resetAll === void 0) { resetAll = false; }
+            console.log('update channels beeing excecuted');
             if (resetAll) {
                 //this is when the UDP IP or port changes while the ws connection persists
                 //here we find all existing subscriptions and change the ip:port string to match the new one
@@ -354,7 +359,9 @@ var GenericServer2 = /** @class */ (function () {
                 //this is for when the user moves and wishes to be subscribed to new (hexagon)channels and unsusbscribes from others
                 //here we add and remove the client from the corresponding channels (should happen more often for drivers than for clients)
                 var toRemove = utils_1.getMultipleChannelNames(connObj.calculateNegativeDelta(newChannels), connObj.city, ownType);
+                console.log('toRemove: ' + toRemove);
                 var toAdd = utils_1.getMultipleChannelNames(connObj.calculatePositiveDelta(newChannels), connObj.city, ownType);
+                console.log('toAdd: ' + toAdd);
                 try {
                     for (var toRemove_1 = __values(toRemove), toRemove_1_1 = toRemove_1.next(); !toRemove_1_1.done; toRemove_1_1 = toRemove_1.next()) {
                         var iterator = toRemove_1_1.value;

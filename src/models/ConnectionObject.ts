@@ -36,15 +36,15 @@ export class ConnectionObject {
         this.receptionChannels = receptionChannels;
     }
 
-    calculatePositiveDelta(incommingChannelIds:number[]) {
-        const delta = incommingChannelIds.filter(
+    calculatePositiveDelta(incommingChannelIds:number[]):number[]  {
+        const delta:number[]  = incommingChannelIds.filter(
             (channelIds) => !this.receptionChannels.includes(channelIds)
         );
         return delta;
     }
 
-    calculateNegativeDelta(incommingChannelIds:number[]) {
-        const delta = this.receptionChannels.filter(
+    calculateNegativeDelta(incommingChannelIds:number[]):number[] {
+        const delta:number[]  = this.receptionChannels.filter(
             (channelIds) => !incommingChannelIds.includes(channelIds)
         );
         return delta;

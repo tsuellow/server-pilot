@@ -229,10 +229,13 @@ export class GenericServer2 {
                 console.log("failed to send closing msg");
               }
             }
-            updateOwnChannels(conn!, []);
-            connectionList.delete(key);
-            console.log("new size: " + connectionList.size);
-            return;
+            try{
+              updateOwnChannels(conn!, []);
+            }finally{
+              connectionList.delete(key);
+              console.log("new size: " + connectionList.size);
+              return;
+            }
           }
         }
       });
@@ -301,6 +304,7 @@ export class GenericServer2 {
       newChannels: number[],
       resetAll = false
     ): void => {
+      console.log('update channels beeing excecuted');
       if (resetAll) {
         //this is when the UDP IP or port changes while the ws connection persists
         //here we find all existing subscriptions and change the ip:port string to match the new one
@@ -327,11 +331,14 @@ export class GenericServer2 {
           connObj.city,
           ownType
         );
+        console.log('toRemove: '+toRemove)
+
         let toAdd: string[] = getMultipleChannelNames(
           connObj.calculatePositiveDelta(newChannels),
           connObj.city,
           ownType
         );
+        console.log('toAdd: '+toAdd)
 
         for (const iterator of toRemove) {
           if (this.distributionChannels.has(iterator)) {
