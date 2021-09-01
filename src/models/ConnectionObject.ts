@@ -35,6 +35,8 @@ export class ConnectionObject {
     setReceptionChannels(reception:number[]) {
         console.log("reset channels got reached");
         this.receptionChannels = reception.slice(0);
+        console.log("these are the current channels again: ",this.receptionChannels);
+        console.log("we tried to set them to this: ",reception);
     }
 
     calculatePositiveDelta(incommingChannelIds:number[]):number[]  {
