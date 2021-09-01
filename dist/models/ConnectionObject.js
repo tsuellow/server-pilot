@@ -25,15 +25,17 @@ var ConnectionObject = /** @class */ (function () {
     ConnectionObject.prototype.setLatestMsg = function (msg) {
         this.latestMsg = msg;
     };
-    ConnectionObject.prototype.setReceptionChannels = function (receptionChannels) {
-        this.receptionChannels = receptionChannels;
+    ConnectionObject.prototype.setReceptionChannels = function (reception) {
+        this.receptionChannels = reception;
     };
     ConnectionObject.prototype.calculatePositiveDelta = function (incommingChannelIds) {
         var _this = this;
+        console.log("these are the current channels: ", this.receptionChannels);
         var delta = incommingChannelIds.filter(function (channelIds) { return !_this.receptionChannels.includes(channelIds); });
         return delta;
     };
     ConnectionObject.prototype.calculateNegativeDelta = function (incommingChannelIds) {
+        console.log("these are the current channels: ", this.receptionChannels);
         var delta = this.receptionChannels.filter(function (channelIds) { return !incommingChannelIds.includes(channelIds); });
         return delta;
     };
