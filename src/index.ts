@@ -1,4 +1,4 @@
-import { GenericServer2 } from "./GenericServer2";
+import { GenericServer } from "./GenericServer";
 import redis, { RedisClient } from "redis";
 import publicIp from 'public-ip';
 import privateIp from 'ip';
@@ -8,8 +8,8 @@ import { exec } from "child_process";
 //add code to get ip address
 //add ip to ip pool on redis
 
-var clientServer: GenericServer2;
-var driverServer: GenericServer2;
+var clientServer: GenericServer;
+var driverServer: GenericServer;
 var externalAddress:string;
 var internalAddress:string;
 var deathWish:boolean=false;
@@ -26,6 +26,12 @@ const interval=setInterval(async ()=>{
   if(externalAddress){
     let value:string=await getCpuFreePlusTime();
     redisConn.hset("genericServers",externalAddress,value);
+    if(clientServer!=null && driverServer!=null){
+      console.log('client stats');
+      console.log(clientServer.getStats());
+      console.log('driver stats');
+      console.log(driverServer.getStats());
+    }
   }
 },15000)
 
@@ -78,7 +84,7 @@ function getCpuFreePromise(){
 
 function startBothServers(ownIp:string) {
   console.log('connecting to redis: '+locRedisAddress )
-  clientServer= new GenericServer2(
+  clientServer= new GenericServer(
     "client",
     "driver",
     3000,
@@ -86,7 +92,7 @@ function startBothServers(ownIp:string) {
     ownIp,
     locRedisAddress
   );
-  driverServer= new GenericServer2(
+  driverServer= new GenericServer(
     "driver",
     "client",
     4000,

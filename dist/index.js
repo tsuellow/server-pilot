@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var GenericServer2_1 = require("./GenericServer2");
+var GenericServer_1 = require("./GenericServer");
 var redis_1 = __importDefault(require("redis"));
 var public_ip_1 = __importDefault(require("public-ip"));
 var ip_1 = __importDefault(require("ip"));
@@ -67,6 +67,12 @@ var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0
             case 1:
                 value = _a.sent();
                 redisConn.hset("genericServers", externalAddress, value);
+                if (clientServer != null && driverServer != null) {
+                    console.log('client stats');
+                    console.log(clientServer.getStats());
+                    console.log('driver stats');
+                    console.log(driverServer.getStats());
+                }
                 _a.label = 2;
             case 2: return [2 /*return*/];
         }
@@ -137,8 +143,8 @@ function getCpuFreePromise() {
 }
 function startBothServers(ownIp) {
     console.log('connecting to redis: ' + locRedisAddress);
-    clientServer = new GenericServer2_1.GenericServer2("client", "driver", 3000, 33333, ownIp, locRedisAddress);
-    driverServer = new GenericServer2_1.GenericServer2("driver", "client", 4000, 44444, ownIp, locRedisAddress);
+    clientServer = new GenericServer_1.GenericServer("client", "driver", 3000, 33333, ownIp, locRedisAddress);
+    driverServer = new GenericServer_1.GenericServer("driver", "client", 4000, 44444, ownIp, locRedisAddress);
     clientServer.startServer();
     driverServer.startServer();
 }
