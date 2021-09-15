@@ -71,9 +71,9 @@ export class GenericServer {
         }
       }
       //update statistics
-      if(jsonMsg.type==2){
+      //if(jsonMsg.type==2){
         this.targetRawLatency=this.resetLatency(jsonMsg,this.targetRawLatency);
-      }
+      //}
     });
   }
 
@@ -113,9 +113,9 @@ export class GenericServer {
         }
       }
       //update statistics
-      if(jsonMsg.type==2){
+      //if(jsonMsg.type==2){
         this.targetRawLatency=this.resetLatency(jsonMsg,this.targetRawLatency);
-      }
+      //}
     });
   }
 
@@ -125,7 +125,12 @@ export class GenericServer {
   }
   private resetLatency(jsonMsg:JsonMsg,target:number):number{
       const currentlatency:number=Date.now()-this.getTimestamp(jsonMsg);
-      return (currentlatency+(this.connectionList.size-1)*target)/this.connectionList.size;
+      if(currentlatency!=NaN && currentlatency!=Infinity){
+        return (currentlatency+(this.connectionList.size-1)*target)/this.connectionList.size;
+      }else{
+        return target;
+      }
+      
   }
   private getChannelDensity():Map<string,number>{
     let result:Map<string,number>=new Map();
@@ -190,6 +195,8 @@ export class GenericServer {
             
           } else {
             //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
+            this.ownLatencyOffset=this.resetLatency(jsonMsg,this.ownLatencyOffset);//move back inside the if
+
             for (var i: number = 0; i < jsonMsg.targetChannels.length; i++) {
               sendOwnLocationOut(
                 getSingleChannelName(
@@ -214,7 +221,7 @@ export class GenericServer {
                 if (type == 2) {
                   updateOwnChannels(existingConn, jsonMsg.receptionChannels);
                   //update statistics
-                  this.ownLatencyOffset=this.resetLatency(jsonMsg,this.ownLatencyOffset);
+                  //this.ownLatencyOffset=this.resetLatency(jsonMsg,this.ownLatencyOffset);
                 }
               }
             }

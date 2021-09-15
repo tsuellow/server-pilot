@@ -92,9 +92,9 @@ var GenericServer = /** @class */ (function () {
                 finally { if (e_1) throw e_1.error; }
             }
             //update statistics
-            if (jsonMsg.type == 2) {
-                _this.targetRawLatency = _this.resetLatency(jsonMsg, _this.targetRawLatency);
-            }
+            //if(jsonMsg.type==2){
+            _this.targetRawLatency = _this.resetLatency(jsonMsg, _this.targetRawLatency);
+            //}
         });
     }
     GenericServer.prototype.setDeathWish = function (trigger) {
@@ -148,9 +148,9 @@ var GenericServer = /** @class */ (function () {
                 finally { if (e_3) throw e_3.error; }
             }
             //update statistics
-            if (jsonMsg.type == 2) {
-                _this.targetRawLatency = _this.resetLatency(jsonMsg, _this.targetRawLatency);
-            }
+            //if(jsonMsg.type==2){
+            _this.targetRawLatency = _this.resetLatency(jsonMsg, _this.targetRawLatency);
+            //}
         });
     };
     //statistics methods
@@ -159,7 +159,12 @@ var GenericServer = /** @class */ (function () {
     };
     GenericServer.prototype.resetLatency = function (jsonMsg, target) {
         var currentlatency = Date.now() - this.getTimestamp(jsonMsg);
-        return (currentlatency + (this.connectionList.size - 1) * target) / this.connectionList.size;
+        if (currentlatency != NaN && currentlatency != Infinity) {
+            return (currentlatency + (this.connectionList.size - 1) * target) / this.connectionList.size;
+        }
+        else {
+            return target;
+        }
     };
     GenericServer.prototype.getChannelDensity = function () {
         var e_5, _a;
@@ -234,6 +239,7 @@ var GenericServer = /** @class */ (function () {
                     }
                     else {
                         //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
+                        _this.ownLatencyOffset = _this.resetLatency(jsonMsg, _this.ownLatencyOffset); //move back inside the if
                         for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
                             sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), message);
                         }
@@ -252,7 +258,7 @@ var GenericServer = /** @class */ (function () {
                                 if (type == 2) {
                                     updateOwnChannels(existingConn, jsonMsg.receptionChannels);
                                     //update statistics
-                                    _this.ownLatencyOffset = _this.resetLatency(jsonMsg, _this.ownLatencyOffset);
+                                    //this.ownLatencyOffset=this.resetLatency(jsonMsg,this.ownLatencyOffset);
                                 }
                             }
                         }
