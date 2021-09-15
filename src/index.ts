@@ -27,10 +27,14 @@ const interval=setInterval(async ()=>{
     let value:string=await getCpuFreePlusTime();
     redisConn.hset("genericServers",externalAddress,value);
     if(clientServer!=null && driverServer!=null){
+      const clientStats=clientServer.getStats();
+      const driverStats=driverServer.getStats();
       console.log('client stats');
-      console.log(clientServer.getStats());
+      console.log(clientStats);
       console.log('driver stats');
-      console.log(driverServer.getStats());
+      console.log(driverStats);
+      console.log('net clientMsg latency:',driverStats.targetRawLatency-clientStats.ownLatencyOffset);
+      console.log('net driverMsg latency:',clientStats.targetRawLatency-driverStats.ownLatencyOffset);
     }
   }
 },15000)

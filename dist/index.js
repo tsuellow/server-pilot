@@ -58,7 +58,7 @@ var redisConn = redis_1.default.createClient(6379, redisAddress, { auth_pass: 'c
 var redisSubscriber = redis_1.default.createClient(6379, redisAddress, { auth_pass: 'contrasena1234' }); //subscribe to your own private channel
 prepareServer();
 var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var value;
+    var value, clientStats, driverStats;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -68,10 +68,14 @@ var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0
                 value = _a.sent();
                 redisConn.hset("genericServers", externalAddress, value);
                 if (clientServer != null && driverServer != null) {
+                    clientStats = clientServer.getStats();
+                    driverStats = driverServer.getStats();
                     console.log('client stats');
-                    console.log(clientServer.getStats());
+                    console.log(clientStats);
                     console.log('driver stats');
-                    console.log(driverServer.getStats());
+                    console.log(driverStats);
+                    console.log('net clientMsg latency:', driverStats.targetRawLatency - clientStats.ownLatencyOffset);
+                    console.log('net driverMsg latency:', clientStats.targetRawLatency - driverStats.ownLatencyOffset);
                 }
                 _a.label = 2;
             case 2: return [2 /*return*/];
