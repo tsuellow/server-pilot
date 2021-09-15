@@ -68,7 +68,6 @@ var GenericServer = /** @class */ (function () {
                     var chName = utils_1.getSingleChannelName(channel, jsonMsg.city, _this.ownType);
                     var list = _this.distributionChannels.get(chName);
                     if (list) {
-                        console.log(chName);
                         try {
                             for (var list_1 = (e_2 = void 0, __values(list)), list_1_1 = list_1.next(); !list_1_1.done; list_1_1 = list_1.next()) {
                                 var _e = __read(list_1_1.value, 2), key = _e[0], value = _e[1];
@@ -91,6 +90,10 @@ var GenericServer = /** @class */ (function () {
                     if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
                 finally { if (e_1) throw e_1.error; }
+            }
+            //update statistics
+            if (jsonMsg.type == 2) {
+                _this.targetRawLatency = _this.resetLatency(jsonMsg, _this.targetRawLatency);
             }
         });
     }
@@ -219,7 +222,6 @@ var GenericServer = /** @class */ (function () {
                 //type:1 message is in order to modify reception channels as well as transmitting own location
                 //type:2 message is in order to exclusively send own location
                 //incomming msg format: {type,taxiId,city,targetChannel?,receptionChannels?,payloadCSV?}
-                console.log(message);
                 try {
                     var jsonMsg = JSON.parse(message);
                     var type = jsonMsg.type;
@@ -229,7 +231,6 @@ var GenericServer = /** @class */ (function () {
                         _this.connectionList.set(jsonMsg.taxiId, conn);
                         var response = { type: 0, action: "SEND UDP" };
                         ws.send(JSON.stringify(response));
-                        console.log(response);
                     }
                     else {
                         //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
@@ -301,7 +302,6 @@ var GenericServer = /** @class */ (function () {
             });
         });
         this.udpSocket.on("message", function (message, remote) {
-            console.log(remote.address + ":" + remote.port + " - " + message);
             var jsonMsg = JSON.parse(message.toString());
             var taxiId = jsonMsg.taxiId;
             var type = jsonMsg.type;
@@ -313,7 +313,6 @@ var GenericServer = /** @class */ (function () {
                     //@ts-ignore
                     updateOwnChannels(connObj, [], true); //change all ip:port data to the newly arrived ip:port
                     var response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
-                    console.log(response);
                     connObj === null || connObj === void 0 ? void 0 : connObj.ws.send(JSON.stringify(response));
                     _this.udpSocket.send("udp hole successfully punched", remote.port, remote.address); //see if this arrives successfully at android
                 }

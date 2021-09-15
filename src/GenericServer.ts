@@ -65,11 +65,14 @@ export class GenericServer {
         );
         const list = this.distributionChannels.get(chName);
         if (list) {
-          console.log(chName);
           for (let [key, value] of list) {
             this.udpSocket.send(jsonMsg.payloadCSV, value.port, value.ip);
           }
         }
+      }
+      //update statistics
+      if(jsonMsg.type==2){
+        this.targetRawLatency=this.resetLatency(jsonMsg,this.targetRawLatency);
       }
     });
   }
@@ -169,7 +172,7 @@ export class GenericServer {
         //type:1 message is in order to modify reception channels as well as transmitting own location
         //type:2 message is in order to exclusively send own location
         //incomming msg format: {type,taxiId,city,targetChannel?,receptionChannels?,payloadCSV?}
-        console.log(message);
+        
         try {
           let jsonMsg: JsonMsg = JSON.parse(message);
           let type: number = jsonMsg.type;
@@ -184,7 +187,7 @@ export class GenericServer {
             this.connectionList.set(jsonMsg.taxiId, conn);
             var response = { type: 0, action: "SEND UDP" };
             ws.send(JSON.stringify(response));
-            console.log(response);
+            
           } else {
             //if type is 1 or 2 publish location payload on redis for counterpart(drivers) to diseminate
             for (var i: number = 0; i < jsonMsg.targetChannels.length; i++) {
@@ -261,7 +264,7 @@ export class GenericServer {
 
 
     this.udpSocket.on("message",  (message, remote) => {
-      console.log(remote.address + ":" + remote.port + " - " + message);
+      
       const jsonMsg = JSON.parse(message.toString());
       const taxiId: number = jsonMsg.taxiId;
       const type: number = jsonMsg.type;
@@ -273,7 +276,7 @@ export class GenericServer {
           //@ts-ignore
           updateOwnChannels(connObj, [], true); //change all ip:port data to the newly arrived ip:port
           const response = { type: 0, action: "SEND LOC" }; //in this step android needs to calculate its reception channels and send them
-          console.log(response);
+        
           connObj?.ws.send(JSON.stringify(response));
           this.udpSocket.send(
             "udp hole successfully punched",
