@@ -33,14 +33,10 @@ export class ConnectionObject {
     }
 
     setReceptionChannels(reception:number[]) {
-        console.log("reset channels got reached");
         this.receptionChannels = reception.slice(0);
-        console.log("these are the current channels again: ",this.receptionChannels);
-        console.log("we tried to set them to this: ",reception);
     }
 
     calculatePositiveDelta(incommingChannelIds:number[]):number[]  {
-        console.log("these are the current channels: ",this.receptionChannels);
         const delta:number[]  = incommingChannelIds.filter(
             (channelIds) => !this.receptionChannels.includes(channelIds)
         );
@@ -48,7 +44,6 @@ export class ConnectionObject {
     }
 
     calculateNegativeDelta(incommingChannelIds:number[]):number[] {
-        console.log("these are the current channels: ",this.receptionChannels);
         const delta:number[]  = this.receptionChannels.filter(
             (channelIds) => !incommingChannelIds.includes(channelIds)
         );

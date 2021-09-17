@@ -128,6 +128,5 @@ function promisifiedGet(key:string):Promise<string> {
       resolve(reply);
     })
   })
-  
 }
  
