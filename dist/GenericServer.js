@@ -198,7 +198,7 @@ var GenericServer = /** @class */ (function () {
                         updateOwnChannels(value, []);
                         value.ws.close();
                         _this.connectionList.delete(key);
-                        console.log("new size: " + _this.connectionList.size);
+                        console.log("new size: " + _this.connectionList.size, 'cons', wsServer.clients.size);
                     }
                 }
             }
@@ -272,6 +272,7 @@ var GenericServer = /** @class */ (function () {
             ws.on("close", function (code, reason) {
                 var e_7, _a;
                 console.log("cons", wsServer.clients.size, 'CODE', code);
+                _this.numOfConnections = wsServer.clients.size;
                 try {
                     for (var _b = __values(_this.connectionList), _c = _b.next(); !_c.done; _c = _b.next()) {
                         var _d = __read(_c.value, 2), key = _d[0], value = _d[1];

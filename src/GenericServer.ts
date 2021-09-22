@@ -151,7 +151,7 @@ export class GenericServer {
           updateOwnChannels(value, []);
           value.ws.close();
           this.connectionList.delete(key);
-          console.log("new size: " + this.connectionList.size);
+          console.log("new size: " + this.connectionList.size,'cons',wsServer.clients.size);
         }
       }
     }, 60000);
@@ -234,6 +234,7 @@ export class GenericServer {
       //when connection is ended the client is first removed from the delivery group
       ws.on("close", (code: number, reason: string) => {
         console.log("cons",wsServer.clients.size,'CODE',code);
+        this.numOfConnections=wsServer.clients.size;
         for (let [key, value] of this.connectionList) {
           if (ws == value.ws) {
             let conn = this.connectionList.get(key);
