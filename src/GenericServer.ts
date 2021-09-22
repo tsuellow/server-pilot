@@ -181,6 +181,7 @@ export class GenericServer {
         try {
           let jsonMsg: JsonMsg = JSON.parse(message);
           let type: number = jsonMsg.type;
+          let existingConn = this.connectionList.get(jsonMsg.taxiId);
 
           if (type == 0) {
             // connection process: add to connection list and tell user to send matching dgram for connection matching
@@ -189,6 +190,11 @@ export class GenericServer {
               jsonMsg.city,
               ws
             );
+            //if another connection with this id exists terminate it and empty channels (see if this is behind persistent conns and channels)
+            if(existingConn){
+              existingConn?.ws.terminate();
+              updateOwnChannels(existingConn,[]);
+            }
             this.connectionList.set(jsonMsg.taxiId, conn);
             var response = { type: 0, action: "SEND UDP" };
             ws.send(JSON.stringify(response));
@@ -207,7 +213,7 @@ export class GenericServer {
                 message
               );
             }
-            let existingConn = this.connectionList.get(jsonMsg.taxiId);
+            //let existingConn = this.connectionList.get(jsonMsg.taxiId);
             if (existingConn) {
               //if deathwish let this connection play russian roulette
               if (this.deathwish && Math.random() <= 0.01) {

@@ -230,9 +230,15 @@ var GenericServer = /** @class */ (function () {
                 try {
                     var jsonMsg = JSON.parse(message);
                     var type = jsonMsg.type;
+                    var existingConn = _this.connectionList.get(jsonMsg.taxiId);
                     if (type == 0) {
                         // connection process: add to connection list and tell user to send matching dgram for connection matching
                         var conn = new ConnectionObject_1.ConnectionObject(jsonMsg.taxiId, jsonMsg.city, ws);
+                        //if another connection with this id exists terminate it and empty channels (see if this is behind persistent conns and channels)
+                        if (existingConn) {
+                            existingConn === null || existingConn === void 0 ? void 0 : existingConn.ws.terminate();
+                            updateOwnChannels(existingConn, []);
+                        }
                         _this.connectionList.set(jsonMsg.taxiId, conn);
                         var response = { type: 0, action: "SEND UDP" };
                         ws.send(JSON.stringify(response));
@@ -243,7 +249,7 @@ var GenericServer = /** @class */ (function () {
                         for (var i = 0; i < jsonMsg.targetChannels.length; i++) {
                             sendOwnLocationOut(utils_1.getSingleChannelName(jsonMsg.targetChannels[i], jsonMsg.city, targetType), message);
                         }
-                        var existingConn = _this.connectionList.get(jsonMsg.taxiId);
+                        //let existingConn = this.connectionList.get(jsonMsg.taxiId);
                         if (existingConn) {
                             //if deathwish let this connection play russian roulette
                             if (_this.deathwish && Math.random() <= 0.01) {
