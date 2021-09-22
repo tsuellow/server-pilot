@@ -271,6 +271,7 @@ var GenericServer = /** @class */ (function () {
             //when connection is ended the client is first removed from the delivery group
             ws.on("close", function (code, reason) {
                 var e_7, _a;
+                console.log("cons", wsServer.clients.size, 'CODE', code);
                 try {
                     for (var _b = __values(_this.connectionList), _c = _b.next(); !_c.done; _c = _b.next()) {
                         var _d = __read(_c.value, 2), key = _d[0], value = _d[1];
@@ -292,7 +293,8 @@ var GenericServer = /** @class */ (function () {
                             }
                             finally {
                                 _this.connectionList.delete(key);
-                                console.log("new size: " + _this.connectionList.size);
+                                ws.terminate(); //trying this out
+                                console.log("new size: " + _this.connectionList.size, "cons", wsServer.clients.size);
                                 return;
                             }
                         }

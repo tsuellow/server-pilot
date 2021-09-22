@@ -26,19 +26,14 @@ var ConnectionObject = /** @class */ (function () {
         this.latestMsg = msg;
     };
     ConnectionObject.prototype.setReceptionChannels = function (reception) {
-        console.log("reset channels got reached");
         this.receptionChannels = reception.slice(0);
-        console.log("these are the current channels again: ", this.receptionChannels);
-        console.log("we tried to set them to this: ", reception);
     };
     ConnectionObject.prototype.calculatePositiveDelta = function (incommingChannelIds) {
         var _this = this;
-        console.log("these are the current channels: ", this.receptionChannels);
         var delta = incommingChannelIds.filter(function (channelIds) { return !_this.receptionChannels.includes(channelIds); });
         return delta;
     };
     ConnectionObject.prototype.calculateNegativeDelta = function (incommingChannelIds) {
-        console.log("these are the current channels: ", this.receptionChannels);
         var delta = this.receptionChannels.filter(function (channelIds) { return !incommingChannelIds.includes(channelIds); });
         return delta;
     };
