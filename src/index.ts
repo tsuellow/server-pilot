@@ -33,6 +33,7 @@ const interval=setInterval(async ()=>{
       console.log(clientStats);
       console.log('driver stats');
       console.log(driverStats);
+      console.log(value);
       console.log('net clientMsg latency:',driverStats.targetRawLatency-clientStats.ownLatencyOffset);
       console.log('net driverMsg latency:',clientStats.targetRawLatency-driverStats.ownLatencyOffset);
     }
