@@ -123,15 +123,17 @@ export class GenericServer {
   private getTimestamp(jsonMsg:JsonMsg):number{
     return +jsonMsg.payloadCSV.split('|')[3];
   }
+
   private resetLatency(jsonMsg:JsonMsg,target:number):number{
-      const currentlatency:number=Date.now()-this.getTimestamp(jsonMsg);
-      if(currentlatency!=NaN && currentlatency!=Infinity){
-        return (currentlatency+(this.connectionList.size-1)*target)/this.connectionList.size;
-      }else{
-        return target;
-      }
-      
+    const currentlatency:number=Date.now()-this.getTimestamp(jsonMsg);
+    const compoundLatency:number=(currentlatency+(this.connectionList.size-1)*target)/this.connectionList.size;
+    if(isFinite(compoundLatency)){
+      return compoundLatency;
+    }else{
+      return target;
+    }
   }
+
   private getChannelDensity():Map<string,number>{
     let result:Map<string,number>=new Map();
     for (const [key, value] of this.distributionChannels) {

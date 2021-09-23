@@ -159,8 +159,9 @@ var GenericServer = /** @class */ (function () {
     };
     GenericServer.prototype.resetLatency = function (jsonMsg, target) {
         var currentlatency = Date.now() - this.getTimestamp(jsonMsg);
-        if (currentlatency != NaN && currentlatency != Infinity) {
-            return (currentlatency + (this.connectionList.size - 1) * target) / this.connectionList.size;
+        var compoundLatency = (currentlatency + (this.connectionList.size - 1) * target) / this.connectionList.size;
+        if (isFinite(compoundLatency)) {
+            return compoundLatency;
         }
         else {
             return target;
