@@ -24,6 +24,7 @@ interface StatsObject{
   numOfUsers:number;
   numOfConnections:number;
   channelSizeMap:Map<string,number>;
+  rawMsgs:string[];
 }
 
 export class GenericServer {
@@ -81,13 +82,14 @@ export class GenericServer {
     this.deathwish = trigger;
   }
 
-  public getStats():StatsObject{
+  public getStats(extended:boolean):StatsObject{
     return {
       ownLatencyOffset:this.ownLatencyOffset,
       targetRawLatency:this.targetRawLatency,
       numOfUsers:this.connectionList.size,
       numOfConnections:this.numOfConnections,
-      channelSizeMap:this.getChannelDensity()
+      channelSizeMap: extended?this.getChannelDensity():new Map(),
+      rawMsgs: extended?this.getLatestLocPool():[]
     }
   }
 
@@ -134,12 +136,20 @@ export class GenericServer {
     }
   }
 
-  private getChannelDensity():Map<string,number>{
+  public getChannelDensity():Map<string,number>{
     let result:Map<string,number>=new Map();
     for (const [key, value] of this.distributionChannels) {
       result.set(key,value.size);
     }
     return result;
+  }
+
+  public getLatestLocPool():string[]{
+    let latestMsgs:string[]=[];
+    for(const [key, value] of this.connectionList){
+        latestMsgs.push(value.latestMsg)
+    }
+    return latestMsgs
   }
 
   startServer(): void {

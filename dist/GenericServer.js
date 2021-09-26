@@ -100,13 +100,14 @@ var GenericServer = /** @class */ (function () {
     GenericServer.prototype.setDeathWish = function (trigger) {
         this.deathwish = trigger;
     };
-    GenericServer.prototype.getStats = function () {
+    GenericServer.prototype.getStats = function (extended) {
         return {
             ownLatencyOffset: this.ownLatencyOffset,
             targetRawLatency: this.targetRawLatency,
             numOfUsers: this.connectionList.size,
             numOfConnections: this.numOfConnections,
-            channelSizeMap: this.getChannelDensity()
+            channelSizeMap: extended ? this.getChannelDensity() : new Map(),
+            rawMsgs: extended ? this.getLatestLocPool() : []
         };
     };
     GenericServer.prototype.resetRedis = function (endpoint) {
@@ -185,13 +186,31 @@ var GenericServer = /** @class */ (function () {
         }
         return result;
     };
+    GenericServer.prototype.getLatestLocPool = function () {
+        var e_6, _a;
+        var latestMsgs = [];
+        try {
+            for (var _b = __values(this.connectionList), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var _d = __read(_c.value, 2), key = _d[0], value = _d[1];
+                latestMsgs.push(value.latestMsg);
+            }
+        }
+        catch (e_6_1) { e_6 = { error: e_6_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_6) throw e_6.error; }
+        }
+        return latestMsgs;
+    };
     GenericServer.prototype.startServer = function () {
         var _this = this;
         var ownType = this.ownType;
         var targetType = this.targetType;
         //periodically close inactive connections
         var interval = setInterval(function () {
-            var e_6, _a;
+            var e_7, _a;
             try {
                 for (var _b = __values(_this.connectionList), _c = _b.next(); !_c.done; _c = _b.next()) {
                     var _d = __read(_c.value, 2), key = _d[0], value = _d[1];
@@ -203,12 +222,12 @@ var GenericServer = /** @class */ (function () {
                     }
                 }
             }
-            catch (e_6_1) { e_6 = { error: e_6_1 }; }
+            catch (e_7_1) { e_7 = { error: e_7_1 }; }
             finally {
                 try {
                     if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
-                finally { if (e_6) throw e_6.error; }
+                finally { if (e_7) throw e_7.error; }
             }
         }, 60000);
         //channel infrastructure
@@ -277,7 +296,7 @@ var GenericServer = /** @class */ (function () {
             });
             //when connection is ended the client is first removed from the delivery group
             ws.on("close", function (code, reason) {
-                var e_7, _a;
+                var e_8, _a;
                 console.log("cons", wsServer.clients.size, 'CODE', code);
                 _this.numOfConnections = wsServer.clients.size;
                 try {
@@ -308,12 +327,12 @@ var GenericServer = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_7_1) { e_7 = { error: e_7_1 }; }
+                catch (e_8_1) { e_8 = { error: e_8_1 }; }
                 finally {
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
-                    finally { if (e_7) throw e_7.error; }
+                    finally { if (e_8) throw e_8.error; }
                 }
             });
         });
@@ -348,7 +367,7 @@ var GenericServer = /** @class */ (function () {
         };
         //this function updates the channels tuned into
         var updateOwnChannels = function (connObj, newChannels, resetAll) {
-            var e_8, _a, e_9, _b, e_10, _c;
+            var e_9, _a, e_10, _b, e_11, _c;
             var _d, _e, _f, _g;
             if (resetAll === void 0) { resetAll = false; }
             if (resetAll) {
@@ -367,12 +386,12 @@ var GenericServer = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_8_1) { e_8 = { error: e_8_1 }; }
+                catch (e_9_1) { e_9 = { error: e_9_1 }; }
                 finally {
                     try {
                         if (toModify_1_1 && !toModify_1_1.done && (_a = toModify_1.return)) _a.call(toModify_1);
                     }
-                    finally { if (e_8) throw e_8.error; }
+                    finally { if (e_9) throw e_9.error; }
                 }
             }
             else {
@@ -388,12 +407,12 @@ var GenericServer = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_9_1) { e_9 = { error: e_9_1 }; }
+                catch (e_10_1) { e_10 = { error: e_10_1 }; }
                 finally {
                     try {
                         if (toRemove_1_1 && !toRemove_1_1.done && (_b = toRemove_1.return)) _b.call(toRemove_1);
                     }
-                    finally { if (e_9) throw e_9.error; }
+                    finally { if (e_10) throw e_10.error; }
                 }
                 try {
                     for (var toAdd_1 = __values(toAdd), toAdd_1_1 = toAdd_1.next(); !toAdd_1_1.done; toAdd_1_1 = toAdd_1.next()) {
@@ -408,12 +427,12 @@ var GenericServer = /** @class */ (function () {
                         });
                     }
                 }
-                catch (e_10_1) { e_10 = { error: e_10_1 }; }
+                catch (e_11_1) { e_11 = { error: e_11_1 }; }
                 finally {
                     try {
                         if (toAdd_1_1 && !toAdd_1_1.done && (_c = toAdd_1.return)) _c.call(toAdd_1);
                     }
-                    finally { if (e_10) throw e_10.error; }
+                    finally { if (e_11) throw e_11.error; }
                 }
                 (_g = _this.connectionList.get(connObj.taxiId)) === null || _g === void 0 ? void 0 : _g.setReceptionChannels(newChannels);
             }

@@ -22,20 +22,33 @@ const redisConn:redis.RedisClient=redis.createClient(6379,redisAddress,{auth_pas
 const redisSubscriber:redis.RedisClient=redis.createClient(6379,redisAddress,{auth_pass: 'contrasena1234'});//subscribe to your own private channel
 prepareServer();
 
+let statCounter=0;
 const interval=setInterval(async ()=>{
   if(externalAddress){
-    let value:string=await getCpuFreePlusTime();
+    let extended:boolean=(statCounter>=7);//when true extended stats are provided
+    
+    let capacity:number= await getCpuFreePromise();
+    let time:number= Date.now();
+    const value:string= capacity+'|'+time;
     redisConn.hset("genericServers",externalAddress,value);
     if(clientServer!=null && driverServer!=null){
-      const clientStats=clientServer.getStats();
-      const driverStats=driverServer.getStats();
-      console.log('client stats');
-      console.log(clientStats);
-      console.log('driver stats');
-      console.log(driverStats);
-      console.log(value);
-      console.log('net clientMsg latency:',driverStats.targetRawLatency-clientStats.ownLatencyOffset);
-      console.log('net driverMsg latency:',clientStats.targetRawLatency-driverStats.ownLatencyOffset);
+      const clientStats=clientServer.getStats(extended);
+      const driverStats=driverServer.getStats(extended);
+      const stat={
+        timestamp:time,
+        ipAddress:externalAddress,
+        freeCpu:capacity,
+        netClientLatency:driverStats.targetRawLatency-clientStats.ownLatencyOffset,
+        netDriverLatency:clientStats.targetRawLatency-driverStats.ownLatencyOffset,
+        clientStats:clientStats,
+        driverStats:driverStats,
+      }
+      console.log(stat);
+      if(extended){
+        statCounter=0;
+      }else{
+        statCounter++;
+      }
     }
   }
 },15000)
@@ -72,7 +85,7 @@ async function prepareServer() {
 
 async function getCpuFreePlusTime():Promise<string> {
   let capacity:number= await getCpuFreePromise();
-  let time:number= new Date().getTime();
+  let time:number= Date.now();
   return capacity+'|'+time;
 }
 

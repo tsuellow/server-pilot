@@ -57,26 +57,39 @@ var locRedisAddress = '';
 var redisConn = redis_1.default.createClient(6379, redisAddress, { auth_pass: 'contrasena1234' });
 var redisSubscriber = redis_1.default.createClient(6379, redisAddress, { auth_pass: 'contrasena1234' }); //subscribe to your own private channel
 prepareServer();
+var statCounter = 0;
 var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var value, clientStats, driverStats;
+    var extended, capacity, time, value, clientStats, driverStats, stat;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 if (!externalAddress) return [3 /*break*/, 2];
-                return [4 /*yield*/, getCpuFreePlusTime()];
+                extended = (statCounter >= 7);
+                return [4 /*yield*/, getCpuFreePromise()];
             case 1:
-                value = _a.sent();
+                capacity = _a.sent();
+                time = Date.now();
+                value = capacity + '|' + time;
                 redisConn.hset("genericServers", externalAddress, value);
                 if (clientServer != null && driverServer != null) {
-                    clientStats = clientServer.getStats();
-                    driverStats = driverServer.getStats();
-                    console.log('client stats');
-                    console.log(clientStats);
-                    console.log('driver stats');
-                    console.log(driverStats);
-                    console.log(value);
-                    console.log('net clientMsg latency:', driverStats.targetRawLatency - clientStats.ownLatencyOffset);
-                    console.log('net driverMsg latency:', clientStats.targetRawLatency - driverStats.ownLatencyOffset);
+                    clientStats = clientServer.getStats(extended);
+                    driverStats = driverServer.getStats(extended);
+                    stat = {
+                        timestamp: time,
+                        ipAddress: externalAddress,
+                        freeCpu: capacity,
+                        netClientLatency: driverStats.targetRawLatency - clientStats.ownLatencyOffset,
+                        netDriverLatency: clientStats.targetRawLatency - driverStats.ownLatencyOffset,
+                        clientStats: clientStats,
+                        driverStats: driverStats,
+                    };
+                    console.log(stat);
+                    if (extended) {
+                        statCounter = 0;
+                    }
+                    else {
+                        statCounter++;
+                    }
                 }
                 _a.label = 2;
             case 2: return [2 /*return*/];
@@ -132,7 +145,7 @@ function getCpuFreePlusTime() {
                 case 0: return [4 /*yield*/, getCpuFreePromise()];
                 case 1:
                     capacity = _a.sent();
-                    time = new Date().getTime();
+                    time = Date.now();
                     return [2 /*return*/, capacity + '|' + time];
             }
         });
