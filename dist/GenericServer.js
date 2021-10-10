@@ -337,6 +337,7 @@ var GenericServer = /** @class */ (function () {
             });
         });
         this.udpSocket.on("message", function (message, remote) {
+            console.log(remote.address + ':::' + remote.port, message.toString());
             var jsonMsg = JSON.parse(message.toString());
             var taxiId = jsonMsg.taxiId;
             var type = jsonMsg.type;

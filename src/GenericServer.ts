@@ -292,7 +292,7 @@ export class GenericServer {
 
 
     this.udpSocket.on("message",  (message, remote) => {
-      
+      console.log(remote.address+':::'+remote.port,message.toString());
       const jsonMsg = JSON.parse(message.toString());
       const taxiId: number = jsonMsg.taxiId;
       const type: number = jsonMsg.type;
