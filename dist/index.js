@@ -83,7 +83,7 @@ var interval = setInterval(function () { return __awaiter(void 0, void 0, void 0
                         clientStats: clientStats,
                         driverStats: driverStats,
                     };
-                    console.log(stat);
+                    //console.log(stat);
                     if (extended) {
                         statCounter = 0;
                     }

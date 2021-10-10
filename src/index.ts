@@ -43,7 +43,7 @@ const interval=setInterval(async ()=>{
         clientStats:clientStats,
         driverStats:driverStats,
       }
-      console.log(stat);
+      //console.log(stat);
       if(extended){
         statCounter=0;
       }else{
